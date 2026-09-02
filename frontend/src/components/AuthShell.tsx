@@ -26,12 +26,12 @@ export function AuthShell({
     <div className="flex min-h-screen bg-app">
       {/* form */}
       <div className="flex w-full flex-col px-6 py-8 sm:px-10 lg:w-[46%] lg:px-16 xl:px-24">
-        <div className="flex items-center justify-end">
+        <div className="flex items-center justify-between">
+          <Brand size="lg" />
           <ThemeToggle />
         </div>
 
         <div className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center py-10">
-          <Brand size="xl" className="mb-9" />
           <h1 className="text-[28px] font-bold tracking-tight text-fg">
             {heading}
           </h1>
