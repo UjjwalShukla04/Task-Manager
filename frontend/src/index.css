@@ -77,11 +77,57 @@
     color-scheme: dark;
   }
 
+  /* Ambient app background: a soft accent glow up top, pinned to the viewport,
+     over the flat app colour. */
   body {
-    background-color: var(--color-app);
     color: var(--color-fg);
     font-family: var(--font-sans);
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    background-color: var(--color-app);
+    background-image: radial-gradient(
+      55rem 26rem at 50% -6rem,
+      color-mix(in srgb, var(--color-accent) 13%, transparent),
+      transparent 70%
+    );
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+  }
+
+  .dark body {
+    background-image:
+      radial-gradient(
+        55rem 30rem at 50% -8rem,
+        color-mix(in srgb, var(--color-accent) 20%, transparent),
+        transparent 70%
+      ),
+      radial-gradient(
+        38rem 38rem at 100% -4rem,
+        color-mix(in srgb, #a855f7 12%, transparent),
+        transparent 60%
+      );
+  }
+
+  /* Faint grid, masked to fade out below the fold. */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    opacity: 0.6;
+    background-image:
+      linear-gradient(var(--color-line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--color-line) 1px, transparent 1px);
+    background-size: 3.5rem 3.5rem;
+    -webkit-mask-image: radial-gradient(90% 55% at 50% 0%, #000, transparent 80%);
+    mask-image: radial-gradient(90% 55% at 50% 0%, #000, transparent 80%);
+  }
+  .dark body::before {
+    opacity: 0.22;
+  }
+  #root {
+    position: relative;
+    z-index: 1;
   }
 
   h1, h2, h3, h4 {

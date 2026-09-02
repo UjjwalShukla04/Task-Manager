@@ -1,5 +1,12 @@
 import type { HTMLAttributes } from "react";
 import { format, isPast, isToday, formatDistanceToNowStrict } from "date-fns";
+
+/** "just now" for the first minute, otherwise "3 minutes ago". */
+function relativeTime(iso: string): string {
+  const diffMs = Date.now() - new Date(iso).getTime();
+  if (diffMs < 45_000) return "just now";
+  return `${formatDistanceToNowStrict(new Date(iso))} ago`;
+}
 import {
   Pencil,
   Trash2,
@@ -42,13 +49,13 @@ export function TaskCard({
   return (
     <article
       className={cn(
-        "group card-hover relative overflow-hidden rounded-card border border-line bg-elevated shadow-xs",
+        "group card-hover relative overflow-hidden rounded-card border border-line bg-elevated shadow-sm hover:border-line-strong",
         className
       )}
     >
       <span
         className={cn(
-          "absolute inset-y-0 left-0 w-0.5",
+          "absolute inset-y-2 left-0 w-1 rounded-r-full",
           priorityMeta[task.priority].dot
         )}
         aria-hidden
@@ -143,7 +150,7 @@ export function TaskCard({
 
         {!compact && (
           <p className="mt-2 text-[11px] text-faint">
-            Updated {formatDistanceToNowStrict(new Date(task.updatedAt))} ago
+            Updated {relativeTime(task.updatedAt)}
           </p>
         )}
       </div>
