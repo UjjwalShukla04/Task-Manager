@@ -116,6 +116,7 @@ export function CreateTaskModal({ isOpen, onClose, taskToEdit }: Props) {
     <Modal
       isOpen={isOpen}
       onClose={onClose}
+      size="xl"
       title={isEdit ? "Edit task" : "New task"}
       description={
         isEdit ? "Update the details below." : "Capture what needs doing."
@@ -148,7 +149,7 @@ export function CreateTaskModal({ isOpen, onClose, taskToEdit }: Props) {
         onKeyDown={(e) => {
           if ((e.metaKey || e.ctrlKey) && e.key === "Enter") submit();
         }}
-        className="space-y-4"
+        className="space-y-5"
       >
         {serverError && (
           <div className="flex items-start gap-2 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-[14px] text-rose-700 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-300">
@@ -189,10 +190,10 @@ export function CreateTaskModal({ isOpen, onClose, taskToEdit }: Props) {
           </div>
           <textarea
             id="task-description"
-            rows={3}
+            rows={5}
             placeholder="Add more detail…"
             {...register("description")}
-            className="block w-full resize-y rounded-lg border border-line-strong bg-surface px-3.5 py-2 text-sm text-fg shadow-xs transition-colors placeholder:text-faint focus:border-accent focus:outline-none focus:ring-4 focus:ring-accent/10"
+            className="block w-full resize-y rounded-lg border border-line-strong bg-surface px-3.5 py-2.5 text-sm text-fg shadow-xs transition-colors placeholder:text-faint focus:border-accent focus:outline-none focus:ring-4 focus:ring-accent/10"
           />
         </div>
 
