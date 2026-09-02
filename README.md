@@ -1,146 +1,139 @@
-# Collaborative Task Manager
+# TaskFlow — Collaborative Task Manager
 
-A real-time collaborative task management application built with the PERN stack (PostgreSQL, Express, React, Node.js).
+A real-time collaborative task manager built with the PERN stack (PostgreSQL,
+Express, React, Node) in TypeScript. Kanban board + list views, JWT cookie auth,
+and live updates over Socket.io.
+
+> **Security note:** an earlier commit of `backend/prisma/schema.prisma` contained
+> a live PostgreSQL connection string. **That database credential must be rotated.**
+> All configuration now comes from environment variables.
 
 ## Features
 
-- **User Authentication**: Secure JWT-based authentication with HttpOnly cookies.
-- **Task Management**: Create, update, delete, and view tasks.
-- **Real-time Collaboration**: Live updates for task creation, assignment, and status changes using Socket.io.
-- **Dashboard**: Filter tasks by status and priority, sort by due date.
-- **Task Assignment**: Assign tasks to other registered users.
-- **Overdue Highlighting**: Visual indicators for overdue tasks.
-- **Responsive UI**: Built with Tailwind CSS for mobile and desktop.
+- **Auth** — register / login / logout with an HttpOnly JWT cookie; rate-limited
+  credential endpoints; passwords hashed with bcrypt (cost configurable).
+- **Tasks** — create, edit, delete, assign; priority + status enums; overdue
+  highlighting.
+- **Board view** — drag-and-drop Kanban (keyboard accessible) with optimistic
+  status updates.
+- **List view** — debounced search, status / priority / sort filters kept in the
+  URL, pagination.
+- **Realtime** — authenticated Socket.io connection; task create / update /
+  assign / delete events pushed to the people involved.
+- **UX** — light / dark / system theme, loading skeletons, accessible dialogs,
+  error boundary, route-level code-splitting.
 
-## Tech Stack
+## Tech stack
 
-### Frontend
-- **Framework**: React (Vite)
-- **Language**: TypeScript
-- **Styling**: Tailwind CSS
-- **State Management**: React Query (TanStack Query)
-- **Forms**: React Hook Form + Zod
-- **Real-time**: Socket.io Client
-- **Routing**: React Router DOM
-- **HTTP Client**: Axios
+| | |
+|---|---|
+| Frontend | React 19 + Vite 7, TypeScript, Tailwind v4, TanStack Query, React Hook Form + Zod, dnd-kit, Socket.io client |
+| Backend | Node 22, Express 5, TypeScript, Prisma 5 + PostgreSQL, Socket.io, Zod, pino, Sentry (optional) |
+| Tooling | Jest + Supertest, ESLint, Docker, GitHub Actions |
 
-### Backend
-- **Runtime**: Node.js
-- **Framework**: Express.js
-- **Language**: TypeScript
-- **Database**: PostgreSQL
-- **ORM**: Prisma
-- **Real-time**: Socket.io
-- **Validation**: Zod
-- **Testing**: Jest
-
-## Architecture
-
-The application follows a **Service-Repository-Controller** pattern to separate concerns:
-- **Controllers**: Handle HTTP requests and responses.
-- **Services**: Contain business logic and handle real-time notifications.
-- **Repositories**: Handle database interactions using Prisma.
-- **DTOs**: Define data shapes and validation schemas using Zod.
+Architecture: **Controller → Service → Repository**, with Zod DTOs for
+validation. See `backend/src/`.
 
 ## Prerequisites
 
-- Node.js (v18+)
-- PostgreSQL (Local or Cloud like Railway/Neon)
+- Node.js 22+ (`.nvmrc`)
+- Docker (for local PostgreSQL) — or your own PostgreSQL 14+
 
-## Setup & Installation
+## Getting started
 
-### Backend
+```bash
+# 1. Start PostgreSQL (host port 5433)
+docker compose up -d db
 
-1. Navigate to the backend directory:
-   ```bash
-   cd backend
-   ```
+# 2. Backend
+cd backend
+cp .env.example .env                 # then set a real JWT_SECRET
+npm install
+npm run prisma:migrate               # apply migrations
+npm run dev                          # http://localhost:5000
 
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
+# 3. Frontend (new terminal)
+cd frontend
+cp .env.example .env                 # optional; defaults work
+npm install
+npm run dev                          # http://localhost:5173
+```
 
-3. Create a `.env` file based on `.env.example`:
-   ```env
-   PORT=5000
-   DATABASE_URL="postgresql://user:password@localhost:5432/taskmanager"
-   JWT_SECRET="your_jwt_secret"
-   CLIENT_URL="http://localhost:5173"
-   NODE_ENV="development"
-   ```
+### Run the whole stack in Docker
 
-4. Run database migrations:
-   ```bash
-   npx prisma migrate dev --name init
-   ```
+```bash
+docker compose --profile full up --build
+# web  → http://localhost:8080
+# api  → http://localhost:5000
+```
 
-5. Start the server:
-   ```bash
-   npm run dev
-   ```
+## Environment variables (backend)
 
-### Frontend
+| Var | Required | Notes |
+|---|---|---|
+| `DATABASE_URL` | yes | PostgreSQL connection string |
+| `JWT_SECRET` | yes | ≥ 32 chars — the server refuses to boot otherwise |
+| `CLIENT_URL` | no | comma-separated allowed origins (default `http://localhost:5173`) |
+| `PORT` | no | default `5000` |
+| `JWT_EXPIRES_IN` | no | default `7d` |
+| `BCRYPT_ROUNDS` | no | default `12` |
+| `SENTRY_DSN` | no | enables error reporting when set |
+| `LOG_LEVEL` | no | pino level, default `info` |
 
-1. Navigate to the frontend directory:
-   ```bash
-   cd frontend
-   ```
+Frontend: `VITE_API_URL` (default `http://localhost:5000/api`), optional
+`VITE_SOCKET_URL`.
 
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
+## Scripts
 
-3. Create a `.env` file (optional if using defaults):
-   ```env
-   VITE_API_URL="http://localhost:5000/api"
-   ```
+**Backend:** `npm run dev` · `build` · `start` · `start:migrate` · `typecheck` ·
+`test` · `prisma:migrate` · `prisma:deploy` · `prisma:studio`
 
-4. Start the development server:
-   ```bash
-   npm run dev
-   ```
+**Frontend:** `npm run dev` · `build` · `typecheck` · `lint` · `preview`
+
+## Tests
+
+```bash
+cd backend
+docker compose up -d db
+npm run prisma:deploy          # against a *_test database
+DATABASE_URL=postgresql://taskflow:taskflow@localhost:5433/taskflow_test npm test
+```
+
+Unit specs run without a database; the Supertest integration suite needs one.
+CI (`.github/workflows/ci.yml`) provisions a Postgres service automatically.
+
+## API
+
+| Method | Path | Notes |
+|---|---|---|
+| `POST` | `/api/auth/register` | rate limited |
+| `POST` | `/api/auth/login` | rate limited |
+| `POST` | `/api/auth/logout` | |
+| `GET` | `/api/auth/me` | auth |
+| `GET` | `/api/auth/users` | auth — assignee picker |
+| `GET` | `/api/tasks` | auth — `status`, `priority`, `search`, `sortBy`, `order`, `page`, `limit`; returns `{ data: { tasks }, pagination }` |
+| `POST` | `/api/tasks` | auth |
+| `PATCH` | `/api/tasks/:id` | auth — creator or assignee |
+| `DELETE` | `/api/tasks/:id` | auth — creator only |
+| `GET` | `/health` | checks the database |
+
+### Socket.io events (server → client)
+
+`task_created` · `task_assigned` · `task_updated` · `task_deleted` (`{ id }`).
+The connection is authenticated from the JWT cookie; the room is the verified
+user id (no client-supplied ids).
 
 ## Deployment
 
-### Backend (Render/Railway)
-1. **Build Command**: `npm run build`
-2. **Start Command**: `npm start`
-3. **Environment Variables**: Set `DATABASE_URL`, `JWT_SECRET`, `CLIENT_URL` (your frontend domain).
+- **Backend** (Render / Railway / Fly): build `npm run build`, start
+  `npm run start:migrate`. Set `DATABASE_URL`, `JWT_SECRET`, `CLIENT_URL`,
+  `NODE_ENV=production`. The app sets `trust proxy` for correct secure cookies.
+- **Frontend** (Vercel / Netlify / nginx): build `npm run build`, output `dist`,
+  set `VITE_API_URL` (and `VITE_SOCKET_URL` if the socket origin differs).
 
-### Frontend (Vercel/Netlify)
-1. **Build Command**: `npm run build`
-2. **Output Directory**: `dist`
-3. **Environment Variables**: Set `VITE_API_URL` to your deployed backend URL.
+## Not yet done (follow-ups)
 
-## API Documentation
-
-### Auth
-- `POST /api/auth/register`: Register a new user.
-- `POST /api/auth/login`: Login user.
-- `POST /api/auth/logout`: Logout user.
-- `GET /api/auth/me`: Get current user profile.
-- `GET /api/auth/users`: Get all users (for assignment).
-
-### Tasks
-- `POST /api/tasks`: Create a task.
-- `GET /api/tasks`: Get tasks (supports filters: status, priority, sortBy).
-- `PATCH /api/tasks/:id`: Update a task.
-- `DELETE /api/tasks/:id`: Delete a task.
-
-## Socket.io Events
-
-- `join_dashboard`: Client joins their personal room (user ID).
-- `task_created`: Notification when a task is created/assigned.
-- `task_updated`: Notification when a task is updated.
-- `task_assigned`: Notification when a task is assigned to the user.
-- `task_deleted`: Notification when a task is deleted.
-
-## Trade-offs & Decisions
-
-1. **HttpOnly Cookies**: Chosen for better security against XSS compared to localStorage, but requires careful CORS configuration.
-2. **Prisma**: Type-safe database access, though version compatibility (v7 vs v5) required sticking to v5 for stability in this setup.
-3. **Socket.io**: Selected for ease of use with Rooms support for targeted notifications.
-4. **Tailwind CSS**: Utility-first approach for rapid UI development.
-
+- Shared Zod schema package (frontend still redefines a few schemas/types).
+- Projects / teams, task comments & activity log, notifications centre.
+- Field-level update permissions (an assignee can currently edit any field).
+- Prettier + pre-commit hooks; frontend component tests.
