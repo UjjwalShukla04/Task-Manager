@@ -1,22 +1,44 @@
-import { z } from 'zod';
+import { z } from "zod";
+
+export const PRIORITIES = ["Low", "Medium", "High", "Urgent"] as const;
+export const STATUSES = ["ToDo", "InProgress", "Review", "Completed"] as const;
 
 export const CreateTaskSchema = z.object({
-  title: z.string().min(1, 'Title is required').max(100, 'Title too long'),
-  description: z.string().default(''),
-  dueDate: z.string().or(z.date()).transform((val) => new Date(val)),
-  priority: z.enum(['Low', 'Medium', 'High', 'Urgent']),
-  assignedToId: z.string().optional(),
+  title: z.string().trim().min(1, "Title is required").max(120, "Title too long"),
+  // Optional; the DB column defaults to "" when omitted.
+  description: z.string().trim().max(5000).optional(),
+  dueDate: z
+    .string()
+    .or(z.date())
+    .transform((val, ctx) => {
+      const d = new Date(val);
+      if (Number.isNaN(d.getTime())) {
+        ctx.addIssue({ code: "custom", message: "Invalid due date" });
+        return z.NEVER;
+      }
+      return d;
+    }),
+  priority: z.enum(PRIORITIES),
+  assignedToId: z.string().uuid().optional(),
 });
 
-export const UpdateTaskSchema = CreateTaskSchema.partial().extend({
-  status: z.enum(['ToDo', 'InProgress', 'Review', 'Completed']).optional(),
-});
+export const UpdateTaskSchema = CreateTaskSchema.partial()
+  .extend({
+    status: z.enum(STATUSES).optional(),
+    assignedToId: z.string().uuid().nullable().optional(),
+  })
+  .refine((v) => Object.keys(v).length > 0, {
+    message: "No fields to update",
+  });
 
 export const TaskFilterSchema = z.object({
-  status: z.enum(['ToDo', 'InProgress', 'Review', 'Completed']).optional(),
-  priority: z.enum(['Low', 'Medium', 'High', 'Urgent']).optional(),
-  sortBy: z.enum(['dueDate']).optional(),
-  order: z.enum(['asc', 'desc']).default('asc').optional(),
+  status: z.enum(STATUSES).optional(),
+  priority: z.enum(PRIORITIES).optional(),
+  search: z.string().trim().max(120).optional(),
+  sortBy: z.enum(["dueDate", "createdAt", "priority"]).default("createdAt"),
+  order: z.enum(["asc", "desc"]).default("desc"),
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(20),
 });
 
 export type CreateTaskInput = z.infer<typeof CreateTaskSchema>;

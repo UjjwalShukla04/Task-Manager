@@ -1,71 +1,83 @@
 import prisma from "../config/prisma";
+import { Prisma } from "@prisma/client";
+import { publicUserSelect } from "./user.repository";
 import {
   CreateTaskInput,
   UpdateTaskInput,
   TaskFilterInput,
 } from "../dto/task.dto";
-import { Prisma } from "@prisma/client";
+
+const taskInclude = {
+  assignedTo: { select: publicUserSelect },
+  creator: { select: publicUserSelect },
+} satisfies Prisma.TaskInclude;
 
 export class TaskRepository {
   async create(data: CreateTaskInput & { creatorId: string }) {
-    return prisma.task.create({
-      data,
-      include: {
-        assignedTo: { select: { id: true, name: true, email: true } },
-        creator: { select: { id: true, name: true, email: true } },
-      },
-    });
+    return prisma.task.create({ data, include: taskInclude });
   }
 
   async findById(id: string) {
-    return prisma.task.findUnique({
-      where: { id },
-      include: {
-        assignedTo: { select: { id: true, name: true, email: true } },
-        creator: { select: { id: true, name: true, email: true } },
-      },
-    });
+    return prisma.task.findUnique({ where: { id }, include: taskInclude });
   }
 
   async findAll(filters: TaskFilterInput, userId: string) {
-    const where: any = {
+    const where: Prisma.TaskWhereInput = {
       OR: [{ creatorId: userId }, { assignedToId: userId }],
+      ...(filters.status ? { status: filters.status } : {}),
+      ...(filters.priority ? { priority: filters.priority } : {}),
+      ...(filters.search
+        ? {
+            AND: [
+              {
+                OR: [
+                  { title: { contains: filters.search, mode: "insensitive" } },
+                  {
+                    description: {
+                      contains: filters.search,
+                      mode: "insensitive",
+                    },
+                  },
+                ],
+              },
+            ],
+          }
+        : {}),
     };
 
-    if (filters.status) where.status = filters.status;
-    if (filters.priority) where.priority = filters.priority;
+    const orderBy: Prisma.TaskOrderByWithRelationInput = {
+      [filters.sortBy]: filters.order,
+    };
 
-    const orderBy: any = {};
-    if (filters.sortBy === "dueDate") {
-      orderBy.dueDate = filters.order || "asc";
-    } else {
-      orderBy.createdAt = "desc";
-    }
+    const skip = (filters.page - 1) * filters.limit;
 
-    return prisma.task.findMany({
-      where,
-      orderBy,
-      include: {
-        assignedTo: { select: { id: true, name: true, email: true } },
-        creator: { select: { id: true, name: true, email: true } },
+    const [tasks, total] = await prisma.$transaction([
+      prisma.task.findMany({
+        where,
+        orderBy,
+        include: taskInclude,
+        skip,
+        take: filters.limit,
+      }),
+      prisma.task.count({ where }),
+    ]);
+
+    return {
+      tasks,
+      pagination: {
+        total,
+        page: filters.page,
+        limit: filters.limit,
+        totalPages: Math.max(1, Math.ceil(total / filters.limit)),
       },
-    });
+    };
   }
 
   async update(id: string, data: UpdateTaskInput) {
-    return prisma.task.update({
-      where: { id },
-      data,
-      include: {
-        assignedTo: { select: { id: true, name: true, email: true } },
-        creator: { select: { id: true, name: true, email: true } },
-      },
-    });
+    return prisma.task.update({ where: { id }, data, include: taskInclude });
   }
 
   async delete(id: string) {
-    return prisma.task.delete({
-      where: { id },
-    });
+    return prisma.task.delete({ where: { id } });
   }
 }

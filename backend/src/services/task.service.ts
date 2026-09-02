@@ -5,8 +5,9 @@ import {
   UpdateTaskInput,
   TaskFilterInput,
 } from "../dto/task.dto";
-import { getIO } from "../utils/socket";
+import { emitToUsers } from "../utils/socket";
 import { AppError } from "../utils/AppError";
+import { logger } from "../config/logger";
 
 const taskRepository = new TaskRepository();
 const userRepository = new UserRepository();
@@ -15,27 +16,17 @@ export class TaskService {
   async createTask(userId: string, data: CreateTaskInput) {
     if (data.assignedToId) {
       const assignee = await userRepository.findById(data.assignedToId);
-      if (!assignee) {
-        throw new AppError("Assigned user not found", 404);
-      }
+      if (!assignee) throw new AppError("Assigned user not found", 404);
     }
 
-    const task = await taskRepository.create({
-      ...data,
-      creatorId: userId,
-    });
+    const task = await taskRepository.create({ ...data, creatorId: userId });
 
-    try {
-      const io = getIO();
-      io.to(userId).emit("task_created", task);
-      if (task.assignedToId && task.assignedToId !== userId) {
-        io.to(task.assignedToId).emit("task_created", task);
-        io.to(task.assignedToId).emit("task_assigned", task);
-      }
-    } catch (error) {
-      console.error("Socket emit failed:", error);
+    emitToUsers([task.creatorId, task.assignedToId], "task_created", task);
+    if (task.assignedToId && task.assignedToId !== userId) {
+      emitToUsers([task.assignedToId], "task_assigned", task);
     }
 
+    logger.info({ taskId: task.id, userId }, "task created");
     return task;
   }
 
@@ -51,57 +42,45 @@ export class TaskService {
       throw new AppError("Not authorized to update this task", 403);
     }
 
-    const updatedTask = await taskRepository.update(taskId, data);
-
-    try {
-      const io = getIO();
-      // Notify creator
-      io.to(updatedTask.creatorId).emit("task_updated", updatedTask);
-
-      // Notify assignee
-      if (updatedTask.assignedToId) {
-        if (updatedTask.assignedToId !== updatedTask.creatorId) {
-          io.to(updatedTask.assignedToId).emit("task_updated", updatedTask);
-        }
-
-        if (task.assignedToId !== updatedTask.assignedToId) {
-          io.to(updatedTask.assignedToId).emit("task_assigned", updatedTask);
-        }
-      }
-
-      // Notify old assignee if different
-      if (
-        task.assignedToId &&
-        task.assignedToId !== updatedTask.assignedToId &&
-        task.assignedToId !== updatedTask.creatorId
-      ) {
-        io.to(task.assignedToId).emit("task_updated", updatedTask);
-      }
-    } catch (error) {
-      console.error("Socket emit failed:", error);
+    if (data.assignedToId && data.assignedToId !== task.assignedToId) {
+      const assignee = await userRepository.findById(data.assignedToId);
+      if (!assignee) throw new AppError("Assigned user not found", 404);
     }
 
-    return updatedTask;
+    const updated = await taskRepository.update(taskId, data);
+
+    // Notify current + previous participants so the task leaves/enters lists.
+    emitToUsers(
+      [updated.creatorId, updated.assignedToId, task.assignedToId],
+      "task_updated",
+      updated
+    );
+    if (
+      updated.assignedToId &&
+      updated.assignedToId !== task.assignedToId &&
+      updated.assignedToId !== userId
+    ) {
+      emitToUsers([updated.assignedToId], "task_assigned", updated);
+    }
+
+    logger.info({ taskId, userId }, "task updated");
+    return updated;
   }
 
   async deleteTask(userId: string, taskId: string) {
     const task = await taskRepository.findById(taskId);
     if (!task) throw new AppError("Task not found", 404);
-
     if (task.creatorId !== userId) {
-      throw new AppError("Only creator can delete task", 403);
+      throw new AppError("Only the creator can delete this task", 403);
     }
 
     await taskRepository.delete(taskId);
 
-    try {
-      const io = getIO();
-      io.to(task.creatorId).emit("task_deleted", taskId);
-      if (task.assignedToId && task.assignedToId !== task.creatorId) {
-        io.to(task.assignedToId).emit("task_deleted", taskId);
-      }
-    } catch (error) {
-      console.error("Socket emit failed:", error);
-    }
+    emitToUsers(
+      [task.creatorId, task.assignedToId],
+      "task_deleted",
+      { id: taskId }
+    );
+    logger.info({ taskId, userId }, "task deleted");
   }
 }

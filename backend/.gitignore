@@ -1,5 +1,18 @@
 node_modules
+dist
+
 # Keep environment variables out of version control
 .env
+.env.*
+!.env.example
+
+# Local SQLite databases (legacy)
+prisma/*.db
+prisma/*.db-journal
+
+# Logs & coverage
+logs
+*.log
+coverage
 
 /generated/prisma
