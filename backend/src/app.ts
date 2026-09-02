@@ -20,8 +20,19 @@ const app = express();
 // rate-limit client IPs work correctly.
 app.set("trust proxy", 1);
 
-app.use(helmet());
+app.use(
+  helmet({
+    // JSON API — no HTML — so the default CSP only gets in the way.
+    contentSecurityPolicy: false,
+    crossOriginResourcePolicy: { policy: "same-site" },
+    referrerPolicy: { policy: "no-referrer" },
+    hsts: env.isProduction
+      ? { maxAge: 15552000, includeSubDomains: true }
+      : false,
+  })
+);
 app.use(compression());
+app.disable("x-powered-by");
 
 app.use(
   cors({

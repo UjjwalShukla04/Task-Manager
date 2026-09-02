@@ -6,7 +6,7 @@ import tseslint from "typescript-eslint";
 import { defineConfig, globalIgnores } from "eslint/config";
 
 export default defineConfig([
-  globalIgnores(["dist"]),
+  globalIgnores(["dist", "coverage"]),
   {
     files: ["**/*.{ts,tsx}"],
     extends: [
@@ -20,7 +20,6 @@ export default defineConfig([
       globals: globals.browser,
     },
     rules: {
-      // DX-only rule; contexts intentionally co-export their hook.
       "react-refresh/only-export-components": [
         "warn",
         { allowConstantExport: true },
@@ -30,6 +29,12 @@ export default defineConfig([
         "warn",
         { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
       ],
+    },
+  },
+  {
+    files: ["**/*.test.{ts,tsx}", "src/test/**"],
+    rules: {
+      "react-refresh/only-export-components": "off",
     },
   },
 ]);

@@ -3,10 +3,10 @@ import { useSearchParams } from "react-router-dom";
 import { Plus, Search, SlidersHorizontal } from "lucide-react";
 import { useDebouncedValue } from "../hooks/useDebouncedValue";
 import { useTasks, useDeleteTask } from "../hooks/useTasks";
+import { useTaskComposer } from "../context/TaskComposerContext";
 import type { TaskFilters } from "../api/tasks";
 import { PRIORITIES, STATUSES, STATUS_LABELS, type Task } from "../types";
 import { TaskCard } from "../components/TaskCard";
-import { CreateTaskModal } from "../components/CreateTaskModal";
 import { EmptyState } from "../components/EmptyState";
 import { TaskGridSkeleton } from "../components/ui/Skeleton";
 import { Button } from "../components/ui/Button";
@@ -21,10 +21,9 @@ export default function TasksPage() {
   const [searchInput, setSearchInput] = useState(params.get("search") ?? "");
   const search = useDebouncedValue(searchInput, 300);
 
-  const [modalOpen, setModalOpen] = useState(false);
-  const [editing, setEditing] = useState<Task | undefined>();
   const [toDelete, setToDelete] = useState<Task | undefined>();
   const deleteMutation = useDeleteTask();
+  const { openCreate, openEdit } = useTaskComposer();
 
   const page = Number(params.get("page") ?? "1");
   const status = params.get("status") ?? "";
@@ -60,15 +59,6 @@ export default function TasksPage() {
   };
 
   const hasFilters = !!(status || priority || search);
-  const openCreate = () => {
-    setEditing(undefined);
-    setModalOpen(true);
-  };
-  const openEdit = (task: Task) => {
-    setEditing(task);
-    setModalOpen(true);
-  };
-
   const tasks = data?.tasks ?? [];
   const pagination = data?.pagination;
 
@@ -81,7 +71,7 @@ export default function TasksPage() {
             {pagination ? `${pagination.total} task${pagination.total === 1 ? "" : "s"}` : " "}
           </p>
         </div>
-        <Button onClick={openCreate}>
+        <Button onClick={() => openCreate()}>
           <Plus className="h-4 w-4" aria-hidden /> New task
         </Button>
       </div>
@@ -170,7 +160,7 @@ export default function TasksPage() {
           }
           action={
             <Button
-              onClick={openCreate}
+              onClick={() => openCreate()}
               variant={hasFilters ? "outline" : "primary"}
             >
               <Plus className="h-4 w-4" aria-hidden /> New task
@@ -184,12 +174,9 @@ export default function TasksPage() {
         >
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {tasks.map((task) => (
-              <TaskCard
-                key={task.id}
-                task={task}
-                onEdit={openEdit}
-                onDelete={setToDelete}
-              />
+              <div key={task.id} className="animate-in">
+                <TaskCard task={task} onEdit={openEdit} onDelete={setToDelete} />
+              </div>
             ))}
           </div>
 
@@ -219,11 +206,6 @@ export default function TasksPage() {
         </div>
       )}
 
-      <CreateTaskModal
-        isOpen={modalOpen}
-        onClose={() => setModalOpen(false)}
-        taskToEdit={editing}
-      />
       <ConfirmDialog
         isOpen={!!toDelete}
         title="Delete task"
@@ -234,7 +216,7 @@ export default function TasksPage() {
         onCancel={() => setToDelete(undefined)}
         onConfirm={() => {
           if (toDelete)
-            deleteMutation.mutate(toDelete.id, {
+            deleteMutation.mutate(toDelete, {
               onSettled: () => setToDelete(undefined),
             });
         }}

@@ -11,12 +11,15 @@ import {
   type DragEndEvent,
   type DragStartEvent,
 } from "@dnd-kit/core";
-import { Plus } from "lucide-react";
+import { isPast, isToday } from "date-fns";
+import { Plus, AlertTriangle } from "lucide-react";
 import { useTasks, useUpdateTask, useDeleteTask } from "../hooks/useTasks";
+import { useTaskComposer } from "../context/TaskComposerContext";
 import { STATUSES, type Task, type TaskStatus } from "../types";
 import { statusMeta } from "../lib/taskMeta";
 import { TaskCard } from "../components/TaskCard";
-import { CreateTaskModal } from "../components/CreateTaskModal";
+import { QuickAdd } from "../components/QuickAdd";
+import { EmptyState } from "../components/EmptyState";
 import { TaskCardSkeleton } from "../components/ui/Skeleton";
 import { ConfirmDialog } from "../components/ui/ConfirmDialog";
 import { Button } from "../components/ui/Button";
@@ -37,15 +40,18 @@ function DraggableCard({
   return (
     <div
       ref={setNodeRef}
-      {...attributes}
-      {...listeners}
       className={cn(
-        "touch-none rounded-card focus:outline-none focus-visible:ring-2 focus-visible:ring-accent",
-        isDragging ? "cursor-grabbing opacity-40" : "cursor-grab"
+        "animate-in rounded-card",
+        isDragging && "opacity-40"
       )}
-      aria-roledescription="Draggable task. Press space to pick up, arrow keys to move, space to drop."
     >
-      <TaskCard task={task} onEdit={onEdit} onDelete={onDelete} showStatus={false} />
+      <TaskCard
+        task={task}
+        onEdit={onEdit}
+        onDelete={onDelete}
+        showStatus={false}
+        dragHandleProps={{ ...attributes, ...listeners }}
+      />
     </div>
   );
 }
@@ -83,15 +89,14 @@ function Column({
         ref={setNodeRef}
         className={cn(
           "flex flex-1 flex-col gap-2.5 rounded-xl p-1 transition-colors",
-          isOver && "bg-accent/7 ring-2 ring-inset ring-accent/30"
+          isOver && "bg-accent/8 ring-2 ring-inset ring-accent/30"
         )}
       >
         {loading ? (
-          <TaskCardSkeleton />
-        ) : tasks.length === 0 ? (
-          <p className="px-2 py-10 text-center text-xs text-faint">
-            Drop tasks here
-          </p>
+          <>
+            <TaskCardSkeleton />
+            <TaskCardSkeleton />
+          </>
         ) : (
           tasks.map((task) => (
             <DraggableCard
@@ -102,23 +107,49 @@ function Column({
             />
           ))
         )}
+        {!loading && <QuickAdd status={status} />}
       </div>
     </section>
   );
 }
 
+function StatChip({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: number;
+  tone?: "default" | "danger";
+}) {
+  return (
+    <div className="rounded-xl border border-line bg-elevated px-3.5 py-2 shadow-xs">
+      <p
+        className={cn(
+          "text-lg font-semibold tabular-nums",
+          tone === "danger" && value > 0 ? "text-rose-500" : "text-fg"
+        )}
+      >
+        {value}
+      </p>
+      <p className="text-[11px] font-medium uppercase tracking-wide text-faint">
+        {label}
+      </p>
+    </div>
+  );
+}
+
 export default function BoardPage() {
-  const { data, isLoading } = useTasks({
+  const { data, isLoading, isError, refetch } = useTasks({
     limit: 100,
     sortBy: "createdAt",
     order: "desc",
   });
   const updateMutation = useUpdateTask();
   const deleteMutation = useDeleteTask();
+  const { openCreate, openEdit } = useTaskComposer();
 
   const [activeId, setActiveId] = useState<string | null>(null);
-  const [modalOpen, setModalOpen] = useState(false);
-  const [editing, setEditing] = useState<Task | undefined>();
   const [toDelete, setToDelete] = useState<Task | undefined>();
 
   const sensors = useSensors(
@@ -138,6 +169,17 @@ export default function BoardPage() {
     return groups;
   }, [tasks]);
 
+  const overdue = useMemo(
+    () =>
+      tasks.filter(
+        (t) =>
+          t.status !== "Completed" &&
+          isPast(new Date(t.dueDate)) &&
+          !isToday(new Date(t.dueDate))
+      ).length,
+    [tasks]
+  );
+
   const activeTask = tasks.find((t) => t.id === activeId);
 
   const onDragStart = (e: DragStartEvent) => setActiveId(String(e.active.id));
@@ -151,61 +193,77 @@ export default function BoardPage() {
     updateMutation.mutate({ id: task.id, data: { status: target } });
   };
 
-  const openCreate = () => {
-    setEditing(undefined);
-    setModalOpen(true);
-  };
-
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-end justify-between gap-3">
+    <div className="space-y-5">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-xl font-semibold text-fg">Board</h1>
           <p className="mt-0.5 text-[13px] text-muted">
-            Drag cards between columns to update status.
+            Drag cards, or press{" "}
+            <kbd className="rounded border border-line px-1 text-[11px]">⌘K</kbd>{" "}
+            for quick actions.
           </p>
         </div>
-        <Button onClick={openCreate}>
+        <Button onClick={() => openCreate()}>
           <Plus className="h-4 w-4" aria-hidden /> New task
         </Button>
       </div>
 
-      <DndContext
-        sensors={sensors}
-        onDragStart={onDragStart}
-        onDragEnd={onDragEnd}
-        onDragCancel={() => setActiveId(null)}
-      >
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
-          {STATUSES.map((status) => (
-            <Column
-              key={status}
-              status={status}
-              tasks={byStatus[status]}
-              loading={isLoading}
-              onEdit={(t) => {
-                setEditing(t);
-                setModalOpen(true);
-              }}
-              onDelete={setToDelete}
-            />
-          ))}
+      <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+        <StatChip label="Total" value={tasks.length} />
+        <StatChip label="In progress" value={byStatus.InProgress.length} />
+        <StatChip label="Completed" value={byStatus.Completed.length} />
+        <StatChip label="Overdue" value={overdue} tone="danger" />
+      </div>
+
+      {isError ? (
+        <div className="rounded-xl border border-rose-200 bg-rose-50 p-6 text-center text-rose-700 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-300">
+          <AlertTriangle className="mx-auto mb-2 h-5 w-5" aria-hidden />
+          <p className="mb-3 text-sm">Couldn’t load the board.</p>
+          <Button variant="outline" size="sm" onClick={() => refetch()}>
+            Retry
+          </Button>
         </div>
+      ) : !isLoading && tasks.length === 0 ? (
+        <EmptyState
+          title="Your board is empty"
+          message="Create your first task and it’ll show up in To Do."
+          action={
+            <Button onClick={() => openCreate()}>
+              <Plus className="h-4 w-4" aria-hidden /> Create task
+            </Button>
+          }
+        />
+      ) : (
+        <DndContext
+          sensors={sensors}
+          onDragStart={onDragStart}
+          onDragEnd={onDragEnd}
+          onDragCancel={() => setActiveId(null)}
+        >
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+            {STATUSES.map((status) => (
+              <Column
+                key={status}
+                status={status}
+                tasks={byStatus[status]}
+                loading={isLoading}
+                onEdit={openEdit}
+                onDelete={setToDelete}
+              />
+            ))}
+          </div>
 
-        <DragOverlay dropAnimation={null}>
-          {activeTask ? (
-            <div className="w-72 rotate-1 opacity-95 shadow-lg">
-              <TaskCard task={activeTask} showStatus={false} />
-            </div>
-          ) : null}
-        </DragOverlay>
-      </DndContext>
+          <DragOverlay>
+            {activeTask ? (
+              <div className="w-72 rotate-1 opacity-95 shadow-lg">
+                <TaskCard task={activeTask} showStatus={false} />
+              </div>
+            ) : null}
+          </DragOverlay>
+        </DndContext>
+      )}
 
-      <CreateTaskModal
-        isOpen={modalOpen}
-        onClose={() => setModalOpen(false)}
-        taskToEdit={editing}
-      />
       <ConfirmDialog
         isOpen={!!toDelete}
         title="Delete task"
@@ -216,7 +274,7 @@ export default function BoardPage() {
         onCancel={() => setToDelete(undefined)}
         onConfirm={() => {
           if (toDelete)
-            deleteMutation.mutate(toDelete.id, {
+            deleteMutation.mutate(toDelete, {
               onSettled: () => setToDelete(undefined),
             });
         }}

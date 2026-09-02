@@ -1,5 +1,12 @@
-import { format, isPast, isToday } from "date-fns";
-import { Pencil, Trash2, CalendarClock, AlertTriangle } from "lucide-react";
+import type { HTMLAttributes } from "react";
+import { format, isPast, isToday, formatDistanceToNowStrict } from "date-fns";
+import {
+  Pencil,
+  Trash2,
+  CalendarClock,
+  AlertTriangle,
+  GripVertical,
+} from "lucide-react";
 import type { Task } from "../types";
 import { PriorityBadge, StatusBadge } from "./ui/Badge";
 import { Avatar } from "./ui/Avatar";
@@ -14,6 +21,7 @@ interface TaskCardProps {
   showStatus?: boolean;
   compact?: boolean;
   className?: string;
+  dragHandleProps?: HTMLAttributes<HTMLElement>;
 }
 
 export function TaskCard({
@@ -23,6 +31,7 @@ export function TaskCard({
   showStatus = true,
   compact = false,
   className,
+  dragHandleProps,
 }: TaskCardProps) {
   const { user } = useAuth();
   const isCreator = user?.id === task.creatorId;
@@ -37,7 +46,6 @@ export function TaskCard({
         className
       )}
     >
-      {/* priority accent strip */}
       <span
         className={cn(
           "absolute inset-y-0 left-0 w-0.5",
@@ -46,10 +54,19 @@ export function TaskCard({
         aria-hidden
       />
 
-      <div className="p-4 pl-[1.125rem]">
-        <div className="mb-2 flex items-start justify-between gap-2">
+      <div className="p-3.5 pl-4">
+        <div className="mb-2 flex items-start gap-2">
+          {dragHandleProps && (
+            <button
+              {...dragHandleProps}
+              aria-label="Drag task"
+              className="-ml-1 mt-0.5 cursor-grab touch-none rounded text-faint opacity-0 transition-opacity focus:opacity-100 focus-visible:ring-2 focus-visible:ring-accent group-hover:opacity-100 active:cursor-grabbing"
+            >
+              <GripVertical className="h-4 w-4" aria-hidden />
+            </button>
+          )}
           <h3
-            className="line-clamp-2 text-sm font-medium leading-snug text-fg"
+            className="line-clamp-2 flex-1 text-sm font-medium leading-snug text-fg"
             title={task.title}
           >
             {task.title}
@@ -69,14 +86,14 @@ export function TaskCard({
           </p>
         )}
 
-        <div className="mt-3 flex items-center justify-between gap-3 border-t border-line pt-3 text-[13px]">
+        <div className="mt-3 flex items-center justify-between gap-3 border-t border-line pt-3">
           <span
             className={cn(
-              "inline-flex items-center gap-1.5",
+              "inline-flex items-center gap-1.5 rounded-md px-1.5 py-0.5 text-[12px] font-medium",
               overdue
-                ? "font-medium text-rose-600 dark:text-rose-400"
+                ? "bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300"
                 : dueToday
-                  ? "font-medium text-amber-600 dark:text-amber-400"
+                  ? "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300"
                   : "text-muted"
             )}
           >
@@ -85,13 +102,10 @@ export function TaskCard({
             ) : (
               <CalendarClock className="h-3.5 w-3.5" aria-hidden />
             )}
-            <span>
-              {overdue ? "Overdue · " : dueToday ? "Today · " : ""}
-              {format(due, "MMM d")}
-            </span>
+            {overdue ? "Overdue" : dueToday ? "Today" : format(due, "MMM d")}
           </span>
 
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1.5">
             {task.assignedTo ? (
               <Avatar
                 name={task.assignedTo.name}
@@ -103,7 +117,7 @@ export function TaskCard({
             )}
 
             {(onEdit || (onDelete && isCreator)) && (
-              <div className="ml-1 flex items-center gap-0.5 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100">
+              <div className="flex items-center gap-0.5 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100">
                 {onEdit && (
                   <button
                     onClick={() => onEdit(task)}
@@ -126,6 +140,12 @@ export function TaskCard({
             )}
           </div>
         </div>
+
+        {!compact && (
+          <p className="mt-2 text-[11px] text-faint">
+            Updated {formatDistanceToNowStrict(new Date(task.updatedAt))} ago
+          </p>
+        )}
       </div>
     </article>
   );
