@@ -36,7 +36,7 @@ export default function App() {
                 toastOptions={{
                   duration: 3500,
                   className:
-                    "!bg-elevated !text-fg !border !border-line !shadow-lg !rounded-xl !text-[13px]",
+                    "!bg-elevated !text-fg !border !border-line !shadow-lg !rounded-xl !text-[14px]",
                 }}
               />
               <Suspense fallback={<FullPageSpinner />}>

@@ -27,7 +27,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
           <label
             htmlFor={inputId}
             className={cn(
-              "mb-1.5 block text-[13px] font-medium text-fg",
+              "mb-1.5 block text-[14px] font-medium text-fg",
               srOnlyLabel && "sr-only"
             )}
           >

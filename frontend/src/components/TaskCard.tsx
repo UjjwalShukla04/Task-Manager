@@ -126,7 +126,7 @@ export function TaskCard({
       <div className="p-4 pl-5.5">
         <h3
           className={cn(
-            "pr-14 text-[13.5px] font-semibold leading-snug",
+            "pr-14 text-[15px] font-semibold leading-snug",
             done ? "text-muted line-through" : "text-fg",
             "line-clamp-2"
           )}
@@ -137,7 +137,7 @@ export function TaskCard({
 
         {!compact && task.description && (
           <p
-            className="mt-1.5 line-clamp-2 text-[12.5px] leading-relaxed text-muted"
+            className="mt-1.5 line-clamp-2 text-[13px] leading-relaxed text-muted"
             title={task.description}
           >
             {task.description}
@@ -147,7 +147,7 @@ export function TaskCard({
         <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-line/70 pt-3">
           <span
             className={cn(
-              "inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-medium",
+              "inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[12px] font-medium",
               pr.className
             )}
           >
@@ -161,7 +161,7 @@ export function TaskCard({
 
           <span
             className={cn(
-              "inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-medium",
+              "inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[12px] font-medium",
               overdue
                 ? "bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300"
                 : dueToday
@@ -189,13 +189,13 @@ export function TaskCard({
               title="Unassigned"
               aria-label="Unassigned"
             >
-              <span className="text-[13px] leading-none">+</span>
+              <span className="text-[14px] leading-none">+</span>
             </span>
           )}
         </div>
 
         {!compact && showTimestamp && (
-          <p className="mt-2 text-[10.5px] text-faint">
+          <p className="mt-2 text-[11px] text-faint">
             Updated {relativeTime(task.updatedAt)}
           </p>
         )}

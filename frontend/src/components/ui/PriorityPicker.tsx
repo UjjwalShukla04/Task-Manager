@@ -22,7 +22,7 @@ export function PriorityPicker({ value, onChange }: Props) {
           key={p}
           value={p}
           className={cn(
-            "flex cursor-pointer items-center justify-center gap-1.5 rounded-lg border px-2 py-1.5 text-[13px] font-medium transition-colors",
+            "flex cursor-pointer items-center justify-center gap-1.5 rounded-lg border px-2 py-1.5 text-[14px] font-medium transition-colors",
             "border-line-strong text-muted hover:text-fg",
             "data-[checked]:border-accent data-[checked]:bg-accent/8 data-[checked]:text-fg",
             "data-[focus]:ring-2 data-[focus]:ring-accent data-[focus]:ring-offset-1 data-[focus]:ring-offset-elevated"

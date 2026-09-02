@@ -164,7 +164,7 @@ export function CommandPalette({ onNewTask }: { onNewTask: () => void }) {
                     placeholder="Type a command or search…"
                     onChange={(e) => setQuery(e.target.value)}
                   />
-                  <kbd className="rounded border border-line px-1.5 py-0.5 text-[10px] font-medium text-faint">
+                  <kbd className="rounded border border-line px-1.5 py-0.5 text-[11px] font-medium text-faint">
                     ESC
                   </kbd>
                 </div>
@@ -189,7 +189,7 @@ export function CommandPalette({ onNewTask }: { onNewTask: () => void }) {
                           {cmd.hint && (
                             <span
                               className={cn(
-                                "text-[11px]",
+                                "text-[12px]",
                                 focus ? "text-white/70" : "text-faint"
                               )}
                             >

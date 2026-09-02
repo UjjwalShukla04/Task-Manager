@@ -41,7 +41,7 @@ export function AuthShell({
           </h1>
           <p className="mt-1.5 text-sm text-muted">{subheading}</p>
           <div className="mt-8">{children}</div>
-          <p className="mt-6 text-center text-[13px] text-muted">{footer}</p>
+          <p className="mt-6 text-center text-[14px] text-muted">{footer}</p>
         </div>
       </div>
 
@@ -56,7 +56,7 @@ export function AuthShell({
             <h2 className="max-w-md text-3xl font-semibold leading-tight tracking-tight">
               Where your team’s work comes together.
             </h2>
-            <p className="mt-3 max-w-sm text-[15px] text-white/80">
+            <p className="mt-3 max-w-sm text-[16px] text-white/80">
               Plan, assign and track tasks on a board that updates for everyone
               the moment something changes.
             </p>
@@ -76,7 +76,7 @@ export function AuthShell({
                 { t: "Done", n: 5 },
               ].map((col) => (
                 <div key={col.t} className="rounded-lg bg-white/10 p-2">
-                  <p className="mb-2 text-[11px] font-medium text-white/70">
+                  <p className="mb-2 text-[12px] font-medium text-white/70">
                     {col.t}
                   </p>
                   <div className="space-y-1.5">

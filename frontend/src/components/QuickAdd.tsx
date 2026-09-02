@@ -42,7 +42,7 @@ export function QuickAdd({ status }: { status: TaskStatus }) {
     return (
       <button
         onClick={() => setOpen(true)}
-        className="flex w-full items-center gap-1.5 rounded-lg px-2 py-1.5 text-[13px] text-faint transition-colors hover:bg-fg/4 hover:text-muted dark:hover:bg-white/5"
+        className="flex w-full items-center gap-1.5 rounded-lg px-2 py-1.5 text-[14px] text-faint transition-colors hover:bg-fg/4 hover:text-muted dark:hover:bg-white/5"
       >
         <Plus className="h-3.5 w-3.5" aria-hidden /> Add task
       </button>
@@ -67,7 +67,7 @@ export function QuickAdd({ status }: { status: TaskStatus }) {
         }}
         placeholder="Task title, then Enter"
         aria-label={`Add task to ${status}`}
-        className="w-full bg-transparent px-2 py-1 text-[13px] text-fg outline-none placeholder:text-faint"
+        className="w-full bg-transparent px-2 py-1 text-[14px] text-fg outline-none placeholder:text-faint"
       />
     </div>
   );

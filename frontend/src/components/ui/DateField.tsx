@@ -21,7 +21,7 @@ export function DateField({ value, onChange, error, id = "task-due" }: Props) {
   return (
     <div>
       <div className="mb-1.5 flex items-center justify-between">
-        <label htmlFor={id} className="text-[13px] font-medium text-fg">
+        <label htmlFor={id} className="text-[14px] font-medium text-fg">
           Due date
         </label>
         <div className="flex gap-1">
@@ -34,7 +34,7 @@ export function DateField({ value, onChange, error, id = "task-due" }: Props) {
                 type="button"
                 onClick={() => onChange(chipIso)}
                 className={cn(
-                  "rounded-md px-1.5 py-0.5 text-[11px] font-medium transition-colors",
+                  "rounded-md px-1.5 py-0.5 text-[12px] font-medium transition-colors",
                   active
                     ? "bg-accent text-white"
                     : "bg-fg/5 text-muted hover:text-fg dark:bg-white/6"

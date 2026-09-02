@@ -67,7 +67,7 @@ export default function TasksPage() {
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-xl font-semibold text-fg">Tasks</h1>
-          <p className="mt-0.5 text-[13px] text-muted">
+          <p className="mt-0.5 text-[14px] text-muted">
             {pagination ? `${pagination.total} task${pagination.total === 1 ? "" : "s"}` : " "}
           </p>
         </div>
@@ -190,7 +190,7 @@ export default function TasksPage() {
               >
                 Previous
               </Button>
-              <span className="text-[13px] text-muted">
+              <span className="text-[14px] text-muted">
                 Page {pagination.page} of {pagination.totalPages}
               </span>
               <Button

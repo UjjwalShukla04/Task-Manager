@@ -67,11 +67,11 @@ export function Modal({
               >
                 <div className="flex items-start justify-between gap-4 px-6 pt-5">
                   <div>
-                    <DialogTitle className="text-[15px] font-semibold text-fg">
+                    <DialogTitle className="text-[16px] font-semibold text-fg">
                       {title}
                     </DialogTitle>
                     {description && (
-                      <p className="mt-0.5 text-[13px] text-muted">
+                      <p className="mt-0.5 text-[14px] text-muted">
                         {description}
                       </p>
                     )}

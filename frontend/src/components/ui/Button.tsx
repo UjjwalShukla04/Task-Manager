@@ -20,9 +20,9 @@ const variants: Record<NonNullable<ButtonProps["variant"]>, string> = {
 };
 
 const sizes: Record<NonNullable<ButtonProps["size"]>, string> = {
-  sm: "h-8 px-3 text-[13px]",
+  sm: "h-8 px-3 text-[14px]",
   md: "h-9.5 px-4 text-sm",
-  lg: "h-11 px-6 text-[15px]",
+  lg: "h-11 px-6 text-[16px]",
   icon: "h-9 w-9",
 };
 

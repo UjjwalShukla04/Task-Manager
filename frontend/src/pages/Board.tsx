@@ -80,8 +80,8 @@ function Column({
     >
       <header className="flex items-center gap-2 px-2 pb-2.5 pt-1">
         <span className={cn("h-2 w-2 rounded-full", meta.dot)} aria-hidden />
-        <h2 className="text-[13px] font-semibold text-fg">{meta.label}</h2>
-        <span className="rounded-full bg-fg/6 px-1.5 text-[11px] font-medium text-muted dark:bg-white/8">
+        <h2 className="text-[14px] font-semibold text-fg">{meta.label}</h2>
+        <span className="rounded-full bg-fg/6 px-1.5 text-[12px] font-medium text-muted dark:bg-white/8">
           {tasks.length}
         </span>
       </header>
@@ -133,7 +133,7 @@ function StatChip({
       >
         {value}
       </p>
-      <p className="text-[11px] font-medium uppercase tracking-wide text-faint">
+      <p className="text-[12px] font-medium uppercase tracking-wide text-faint">
         {label}
       </p>
     </div>
@@ -199,9 +199,9 @@ export default function BoardPage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-xl font-semibold text-fg">Board</h1>
-          <p className="mt-0.5 text-[13px] text-muted">
+          <p className="mt-0.5 text-[14px] text-muted">
             Drag cards, or press{" "}
-            <kbd className="rounded border border-line px-1 text-[11px]">⌘K</kbd>{" "}
+            <kbd className="rounded border border-line px-1 text-[12px]">⌘K</kbd>{" "}
             for quick actions.
           </p>
         </div>

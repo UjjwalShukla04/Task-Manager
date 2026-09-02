@@ -19,7 +19,7 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
           <label
             htmlFor={selectId}
             className={cn(
-              "mb-1.5 block text-[13px] font-medium text-fg",
+              "mb-1.5 block text-[14px] font-medium text-fg",
               srOnlyLabel && "sr-only"
             )}
           >

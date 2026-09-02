@@ -123,7 +123,7 @@ export function CreateTaskModal({ isOpen, onClose, taskToEdit }: Props) {
       initialFocus={titleRef}
       footer={
         <div className="flex items-center justify-between">
-          <span className="hidden text-[11px] text-faint sm:block">
+          <span className="hidden text-[12px] text-faint sm:block">
             <kbd className="rounded border border-line px-1">⌘</kbd>
             <kbd className="ml-0.5 rounded border border-line px-1">↵</kbd> to save
           </span>
@@ -151,7 +151,7 @@ export function CreateTaskModal({ isOpen, onClose, taskToEdit }: Props) {
         className="space-y-4"
       >
         {serverError && (
-          <div className="flex items-start gap-2 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-[13px] text-rose-700 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-300">
+          <div className="flex items-start gap-2 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-[14px] text-rose-700 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-300">
             <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
             {serverError}
           </div>
@@ -181,11 +181,11 @@ export function CreateTaskModal({ isOpen, onClose, taskToEdit }: Props) {
           <div className="mb-1.5 flex items-center justify-between">
             <label
               htmlFor="task-description"
-              className="text-[13px] font-medium text-fg"
+              className="text-[14px] font-medium text-fg"
             >
               Description
             </label>
-            <span className="text-[11px] text-faint">{description.length}/5000</span>
+            <span className="text-[12px] text-faint">{description.length}/5000</span>
           </div>
           <textarea
             id="task-description"
@@ -209,7 +209,7 @@ export function CreateTaskModal({ isOpen, onClose, taskToEdit }: Props) {
         />
 
         <div>
-          <span className="mb-1.5 block text-[13px] font-medium text-fg">
+          <span className="mb-1.5 block text-[14px] font-medium text-fg">
             Priority
           </span>
           <Controller
@@ -222,7 +222,7 @@ export function CreateTaskModal({ isOpen, onClose, taskToEdit }: Props) {
         </div>
 
         <div>
-          <span className="mb-1.5 block text-[13px] font-medium text-fg">
+          <span className="mb-1.5 block text-[14px] font-medium text-fg">
             Assignee
           </span>
           <Controller
