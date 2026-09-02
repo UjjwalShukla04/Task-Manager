@@ -1,19 +1,9 @@
 import { cn } from "../../utils/cn";
-import type { Priority, TaskStatus } from "../../types";
-import { priorityMeta, statusMeta } from "../../lib/taskMeta";
+import type { TaskStatus } from "../../types";
+import { statusMeta } from "../../lib/taskMeta";
 
 const base =
-  "inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-medium";
-
-export function PriorityBadge({ priority }: { priority: Priority }) {
-  const m = priorityMeta[priority];
-  return (
-    <span className={cn(base, m.className)}>
-      <span className={cn("h-1.5 w-1.5 rounded-full", m.dot)} aria-hidden />
-      {m.label}
-    </span>
-  );
-}
+  "inline-flex items-center gap-1.5 rounded-md px-1.5 py-0.5 text-[11px] font-medium";
 
 export function StatusBadge({ status }: { status: TaskStatus }) {
   const m = statusMeta[status];

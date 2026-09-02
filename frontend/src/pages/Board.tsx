@@ -50,6 +50,7 @@ function DraggableCard({
         onEdit={onEdit}
         onDelete={onDelete}
         showStatus={false}
+        showTimestamp={false}
         dragHandleProps={{ ...attributes, ...listeners }}
       />
     </div>
@@ -257,7 +258,11 @@ export default function BoardPage() {
           <DragOverlay>
             {activeTask ? (
               <div className="w-72 rotate-1 opacity-95 shadow-lg">
-                <TaskCard task={activeTask} showStatus={false} />
+                <TaskCard
+                  task={activeTask}
+                  showStatus={false}
+                  showTimestamp={false}
+                />
               </div>
             ) : null}
           </DragOverlay>
