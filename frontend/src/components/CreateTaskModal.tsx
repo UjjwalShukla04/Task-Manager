@@ -1,67 +1,67 @@
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createTask, updateTask } from "../api/tasks";
+import { useQuery } from "@tanstack/react-query";
+import { format } from "date-fns";
 import { getAllUsers } from "../api/auth";
+import { useCreateTask, useUpdateTask } from "../hooks/useTasks";
 import { Modal } from "./ui/Modal";
 import { Button } from "./ui/Button";
 import { Input } from "./ui/Input";
-import type { Task } from "../types";
-import toast from "react-hot-toast";
-import { useEffect } from "react";
+import { Select } from "./ui/Select";
+import { PRIORITIES, type Task } from "../types";
 
-const taskSchema = z.object({
-  title: z.string().min(1, "Title is required"),
-  description: z.string().optional(),
+const schema = z.object({
+  title: z.string().trim().min(1, "Title is required").max(120),
+  description: z.string().trim().max(5000).optional(),
   dueDate: z.string().min(1, "Due date is required"),
-  priority: z.enum(["Low", "Medium", "High", "Urgent"]),
+  priority: z.enum(PRIORITIES),
   assignedToId: z.string().optional(),
 });
+type FormData = z.infer<typeof schema>;
 
-type TaskFormData = z.infer<typeof taskSchema>;
-
-interface CreateTaskModalProps {
+interface Props {
   isOpen: boolean;
   onClose: () => void;
   taskToEdit?: Task;
 }
 
-export function CreateTaskModal({
-  isOpen,
-  onClose,
-  taskToEdit,
-}: CreateTaskModalProps) {
-  const queryClient = useQueryClient();
-  const {
-    register,
-    handleSubmit,
-    reset,
-    setValue,
-    formState: { errors },
-  } = useForm<TaskFormData>({
-    resolver: zodResolver(taskSchema),
-    defaultValues: {
-      priority: "Medium",
-    },
-  });
+/** Turn a "yyyy-MM-dd" field value into an end-of-day ISO string (tz-safe). */
+const toDueIso = (value: string) => new Date(`${value}T23:59:59`).toISOString();
+
+export function CreateTaskModal({ isOpen, onClose, taskToEdit }: Props) {
+  const isEdit = !!taskToEdit;
+  const createMutation = useCreateTask();
+  const updateMutation = useUpdateTask();
 
   const { data: users } = useQuery({
     queryKey: ["users"],
     queryFn: getAllUsers,
     enabled: isOpen,
+    staleTime: 60_000,
+  });
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<FormData>({
+    resolver: zodResolver(schema),
+    defaultValues: { priority: "Medium" },
   });
 
   useEffect(() => {
+    if (!isOpen) return;
     if (taskToEdit) {
-      setValue("title", taskToEdit.title);
-      setValue("description", taskToEdit.description);
-      setValue(
-        "dueDate",
-        new Date(taskToEdit.dueDate).toISOString().split("T")[0]
-      );
-      setValue("priority", taskToEdit.priority);
-      setValue("assignedToId", taskToEdit.assignedToId || "");
+      reset({
+        title: taskToEdit.title,
+        description: taskToEdit.description,
+        dueDate: format(new Date(taskToEdit.dueDate), "yyyy-MM-dd"),
+        priority: taskToEdit.priority,
+        assignedToId: taskToEdit.assignedToId ?? "",
+      });
     } else {
       reset({
         title: "",
@@ -71,44 +71,23 @@ export function CreateTaskModal({
         assignedToId: "",
       });
     }
-  }, [taskToEdit, setValue, reset, isOpen]);
+  }, [taskToEdit, isOpen, reset]);
 
-  const createMutation = useMutation({
-    mutationFn: createTask,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["tasks"] });
-      toast.success("Task created successfully");
-      onClose();
-      reset();
-    },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.message || "Failed to create task");
-    },
-  });
-
-  const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: TaskFormData }) =>
-      updateTask(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["tasks"] });
-      toast.success("Task updated successfully");
-      onClose();
-      reset();
-    },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.message || "Failed to update task");
-    },
-  });
-
-  const onSubmit = (data: TaskFormData) => {
-    const formattedData = {
-      ...data,
+  const onSubmit = (data: FormData) => {
+    const payload = {
+      title: data.title,
+      description: data.description ?? "",
+      dueDate: toDueIso(data.dueDate),
+      priority: data.priority,
       assignedToId: data.assignedToId || undefined,
     };
-    if (taskToEdit) {
-      updateMutation.mutate({ id: taskToEdit.id, data: formattedData });
+    if (isEdit && taskToEdit) {
+      updateMutation.mutate(
+        { id: taskToEdit.id, data: { ...payload, assignedToId: data.assignedToId || null } },
+        { onSuccess: onClose }
+      );
     } else {
-      createMutation.mutate(formattedData);
+      createMutation.mutate(payload, { onSuccess: onClose });
     }
   };
 
@@ -116,65 +95,52 @@ export function CreateTaskModal({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={taskToEdit ? "Edit Task" : "Create Task"}
+      title={isEdit ? "Edit task" : "Create task"}
+      description={isEdit ? undefined : "Add a task and optionally assign it."}
     >
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-        <Input
-          label="Title"
-          error={errors.title?.message}
-          {...register("title")}
-        />
+        <Input label="Title" error={errors.title?.message} {...register("title")} />
 
-        <div className="space-y-1">
-          <label className="block text-sm font-medium text-gray-700">
+        <div>
+          <label
+            htmlFor="task-description"
+            className="mb-1 block text-sm font-medium text-fg"
+          >
             Description
           </label>
           <textarea
-            className="flex min-h-[80px] w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            id="task-description"
+            rows={3}
+            className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-fg focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
             {...register("description")}
           />
         </div>
 
         <Input
-          label="Due Date"
+          label="Due date"
           type="date"
           error={errors.dueDate?.message}
           {...register("dueDate")}
         />
 
-        <div className="space-y-1">
-          <label className="block text-sm font-medium text-gray-700">
-            Priority
-          </label>
-          <select
-            className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            {...register("priority")}
-          >
-            <option value="Low">Low</option>
-            <option value="Medium">Medium</option>
-            <option value="High">High</option>
-            <option value="Urgent">Urgent</option>
-          </select>
-        </div>
+        <Select label="Priority" {...register("priority")}>
+          {PRIORITIES.map((p) => (
+            <option key={p} value={p}>
+              {p}
+            </option>
+          ))}
+        </Select>
 
-        <div className="space-y-1">
-          <label className="block text-sm font-medium text-gray-700">
-            Assign To
-          </label>
-          <select
-            className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            {...register("assignedToId")}
-          >
-            <option value="">Unassigned</option>
-            {users?.map((user) => (
-              <option key={user.id} value={user.id}>
-                {user.name} ({user.email})
-              </option>
-            ))}
-          </select>
-        </div>
+        <Select label="Assign to" {...register("assignedToId")}>
+          <option value="">Unassigned</option>
+          {users?.map((u) => (
+            <option key={u.id} value={u.id}>
+              {u.name} ({u.email})
+            </option>
+          ))}
+        </Select>
 
-        <div className="pt-4 flex justify-end space-x-2">
+        <div className="flex justify-end gap-2 pt-2">
           <Button type="button" variant="ghost" onClick={onClose}>
             Cancel
           </Button>
@@ -182,7 +148,7 @@ export function CreateTaskModal({
             type="submit"
             isLoading={createMutation.isPending || updateMutation.isPending}
           >
-            {taskToEdit ? "Update" : "Create"}
+            {isEdit ? "Save changes" : "Create task"}
           </Button>
         </div>
       </form>

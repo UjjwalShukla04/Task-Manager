@@ -1,11 +1,11 @@
 import api from "./axios";
-import type { Task } from "../types";
+import type { Task, Pagination, Priority, TaskStatus } from "../types";
 
 export interface CreateTaskData {
   title: string;
   description?: string;
   dueDate: string;
-  priority: "Low" | "Medium" | "High" | "Urgent";
+  priority: Priority;
   assignedToId?: string;
 }
 
@@ -13,44 +13,52 @@ export interface UpdateTaskData {
   title?: string;
   description?: string;
   dueDate?: string;
-  priority?: "Low" | "Medium" | "High" | "Urgent";
-  status?: "ToDo" | "InProgress" | "Review" | "Completed";
-  assignedToId?: string;
+  priority?: Priority;
+  status?: TaskStatus;
+  assignedToId?: string | null;
 }
 
 export interface TaskFilters {
-  status?: string;
-  priority?: string;
-  sortBy?: string;
+  status?: TaskStatus | "";
+  priority?: Priority | "";
+  search?: string;
+  sortBy?: "dueDate" | "createdAt" | "priority";
   order?: "asc" | "desc";
+  page?: number;
+  limit?: number;
 }
 
-export const getTasks = async (filters?: TaskFilters) => {
+export interface TasksPage {
+  tasks: Task[];
+  pagination: Pagination;
+}
+
+export const getTasks = async (filters: TaskFilters = {}): Promise<TasksPage> => {
   const params = new URLSearchParams();
-  if (filters) {
-    Object.entries(filters).forEach(([key, value]) => {
-      if (value) params.append(key, value);
-    });
-  }
-  const response = await api.get<{ data: { tasks: Task[] } }>(
+  Object.entries(filters).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== "") {
+      params.append(key, String(value));
+    }
+  });
+  const res = await api.get<{ data: { tasks: Task[] }; pagination: Pagination }>(
     `/tasks?${params.toString()}`
   );
-  return response.data.data.tasks;
+  return { tasks: res.data.data.tasks, pagination: res.data.pagination };
 };
 
-export const createTask = async (data: CreateTaskData) => {
-  const response = await api.post<{ data: { task: Task } }>("/tasks", data);
-  return response.data.data.task;
+export const createTask = async (data: CreateTaskData): Promise<Task> => {
+  const res = await api.post<{ data: { task: Task } }>("/tasks", data);
+  return res.data.data.task;
 };
 
-export const updateTask = async (id: string, data: UpdateTaskData) => {
-  const response = await api.patch<{ data: { task: Task } }>(
-    `/tasks/${id}`,
-    data
-  );
-  return response.data.data.task;
+export const updateTask = async (
+  id: string,
+  data: UpdateTaskData
+): Promise<Task> => {
+  const res = await api.patch<{ data: { task: Task } }>(`/tasks/${id}`, data);
+  return res.data.data.task;
 };
 
-export const deleteTask = async (id: string) => {
+export const deleteTask = async (id: string): Promise<void> => {
   await api.delete(`/tasks/${id}`);
 };

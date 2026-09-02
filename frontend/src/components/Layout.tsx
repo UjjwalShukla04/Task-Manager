@@ -1,48 +1,70 @@
-import { Navigate, Outlet, Link } from "react-router-dom";
+import { NavLink, Outlet } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { useTaskRealtime } from "../hooks/useTasks";
 import { Button } from "./ui/Button";
-import { Layout as LayoutIcon, LogOut, User } from "lucide-react";
+import { ThemeToggle } from "./ui/ThemeToggle";
+import { LayoutGrid, List, LogOut } from "lucide-react";
+import { cn } from "../utils/cn";
+
+const navLinkClass = ({ isActive }: { isActive: boolean }) =>
+  cn(
+    "inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
+    isActive
+      ? "bg-indigo-600 text-white"
+      : "text-fg-muted hover:bg-surface-muted hover:text-fg"
+  );
 
 export default function Layout() {
   const { user, logout } = useAuth();
-
-  if (!user) {
-    return <Navigate to="/login" replace />;
-  }
+  useTaskRealtime();
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white border-b border-gray-200 sticky top-0 z-30">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
-            <div className="flex">
-              <Link to="/" className="flex-shrink-0 flex items-center gap-2">
-                <LayoutIcon className="h-8 w-8 text-indigo-600" />
-                <span className="text-xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                  TaskFlow
-                </span>
-              </Link>
-            </div>
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2 text-sm text-gray-700 bg-gray-50 px-3 py-1.5 rounded-full border border-gray-200">
-                <User className="h-4 w-4 text-gray-500" />
-                <span className="font-medium">{user.name}</span>
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => logout()}
-                className="flex items-center gap-2 hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-colors"
-              >
-                <LogOut className="h-4 w-4" />
-                Logout
-              </Button>
-            </div>
+    <div className="min-h-screen bg-surface-muted">
+      <a
+        href="#main"
+        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-indigo-600 focus:px-3 focus:py-2 focus:text-white"
+      >
+        Skip to content
+      </a>
+
+      <header className="sticky top-0 z-30 border-b border-border bg-surface/80 backdrop-blur">
+        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center gap-6">
+            <span className="flex items-center gap-2 text-lg font-bold">
+              <LayoutGrid className="h-6 w-6 text-indigo-600" aria-hidden />
+              <span className="bg-gradient-to-r from-indigo-500 to-purple-500 bg-clip-text text-transparent">
+                TaskFlow
+              </span>
+            </span>
+            <nav className="flex items-center gap-1" aria-label="Views">
+              <NavLink to="/" end className={navLinkClass}>
+                <LayoutGrid className="h-4 w-4" aria-hidden /> Board
+              </NavLink>
+              <NavLink to="/list" className={navLinkClass}>
+                <List className="h-4 w-4" aria-hidden /> List
+              </NavLink>
+            </nav>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span className="hidden rounded-full border border-border bg-surface-muted px-3 py-1.5 text-sm text-fg-muted sm:inline">
+              {user?.name}
+            </span>
+            <ThemeToggle />
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => logout()}
+              className="gap-2"
+            >
+              <LogOut className="h-4 w-4" aria-hidden />
+              <span className="hidden sm:inline">Logout</span>
+            </Button>
           </div>
         </div>
-      </nav>
+      </header>
 
-      <main className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+      <main id="main" className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <Outlet />
       </main>
     </div>

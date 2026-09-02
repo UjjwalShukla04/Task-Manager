@@ -1,119 +1,106 @@
 import {
   createContext,
   useContext,
-  useState,
   useEffect,
+  useCallback,
   type ReactNode,
 } from "react";
+import {
+  useQuery,
+  useMutation,
+  useQueryClient,
+} from "@tanstack/react-query";
 import type { User } from "../types";
 import * as authApi from "../api/auth";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { getSocket } from "../utils/socket";
+import { setUnauthorizedHandler } from "../api/axios";
+import { connectSocket, disconnectSocket } from "../utils/socket";
 
-interface AuthContextType {
+interface AuthContextValue {
   user: User | null;
-  isLoading: boolean;
+  isInitializing: boolean;
+  isAuthenticating: boolean;
   login: (data: authApi.LoginData) => Promise<void>;
   register: (data: authApi.RegisterData) => Promise<void>;
   logout: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const AuthContext = createContext<AuthContextValue | undefined>(undefined);
+const ME_KEY = ["auth", "me"] as const;
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const queryClient = useQueryClient();
-  const [user, setUser] = useState<User | null>(null);
-  const [isInitializing, setIsInitializing] = useState(true);
 
-  // Check if user is logged in on mount
+  const meQuery = useQuery({
+    queryKey: ME_KEY,
+    queryFn: authApi.getMe,
+    retry: false,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const user = meQuery.data ?? null;
+
+  // Keep the realtime socket in sync with auth state.
   useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const userData = await authApi.getMe();
-        setUser(userData);
-        connectSocket(userData.id);
-      } catch (error) {
-        setUser(null);
-      } finally {
-        setIsInitializing(false);
-      }
-    };
-    checkAuth();
-  }, []);
+    if (user) connectSocket();
+    else disconnectSocket();
+  }, [user]);
 
-  const connectSocket = (userId: string) => {
-    const socket = getSocket();
-    socket.connect();
-    socket.emit("join_dashboard", userId);
-  };
+  const resetToLoggedOut = useCallback(() => {
+    queryClient.setQueryData(ME_KEY, null);
+    queryClient.removeQueries({ queryKey: ["tasks"] });
+    disconnectSocket();
+  }, [queryClient]);
+
+  // A 401 from any request (expired cookie) drops us to logged-out.
+  useEffect(() => {
+    setUnauthorizedHandler(resetToLoggedOut);
+    return () => setUnauthorizedHandler(null);
+  }, [resetToLoggedOut]);
 
   const loginMutation = useMutation({
     mutationFn: authApi.login,
-    onSuccess: (data) => {
-      setUser(data.data.user);
-      connectSocket(data.data.user.id);
+    onSuccess: (u) => {
+      queryClient.setQueryData(ME_KEY, u);
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
     },
   });
 
   const registerMutation = useMutation({
     mutationFn: authApi.register,
-    onSuccess: (data) => {
-      setUser(data.data.user);
-      connectSocket(data.data.user.id);
+    onSuccess: (u) => {
+      queryClient.setQueryData(ME_KEY, u);
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
     },
   });
 
   const logoutMutation = useMutation({
     mutationFn: authApi.logout,
-    onSuccess: () => {
-      setUser(null);
-      const socket = getSocket();
-      socket.disconnect();
+    onSettled: () => {
+      resetToLoggedOut();
       queryClient.clear();
     },
   });
 
-  const login = async (data: authApi.LoginData) => {
-    await loginMutation.mutateAsync(data);
+  const value: AuthContextValue = {
+    user,
+    isInitializing: meQuery.isLoading,
+    isAuthenticating: loginMutation.isPending || registerMutation.isPending,
+    login: async (data) => {
+      await loginMutation.mutateAsync(data);
+    },
+    register: async (data) => {
+      await registerMutation.mutateAsync(data);
+    },
+    logout: async () => {
+      await logoutMutation.mutateAsync();
+    },
   };
 
-  const register = async (data: authApi.RegisterData) => {
-    await registerMutation.mutateAsync(data);
-  };
-
-  const logout = async () => {
-    await logoutMutation.mutateAsync();
-  };
-
-  if (isInitializing) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        Loading...
-      </div>
-    );
-  }
-
-  return (
-    <AuthContext.Provider
-      value={{
-        user,
-        isLoading: loginMutation.isPending || registerMutation.isPending,
-        login,
-        register,
-        logout,
-      }}
-    >
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
 export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error("useAuth must be used within an AuthProvider");
-  }
-  return context;
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error("useAuth must be used within an AuthProvider");
+  return ctx;
 };

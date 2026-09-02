@@ -1,9 +1,5 @@
 import api from "./axios";
-import type { AuthResponse, ApiResponse } from "../types";
-
-// Note: We are importing types from backend directly to ensure type safety.
-// If this is a monorepo, this works. If not, we should duplicate the types or use a shared package.
-// For this environment, I'll redefine them here to avoid path issues if the backend folder isn't accessible cleanly.
+import type { User } from "../types";
 
 export interface RegisterData {
   name: string;
@@ -16,36 +12,26 @@ export interface LoginData {
   password: string;
 }
 
-export const register = async (data: RegisterData) => {
-  const response = await api.post<ApiResponse<AuthResponse>>(
-    "/auth/register",
-    data
-  );
-  return response.data;
+export const register = async (data: RegisterData): Promise<User> => {
+  const res = await api.post<{ data: { user: User } }>("/auth/register", data);
+  return res.data.data.user;
 };
 
-export const login = async (data: LoginData) => {
-  const response = await api.post<ApiResponse<AuthResponse>>(
-    "/auth/login",
-    data
-  );
-  return response.data;
+export const login = async (data: LoginData): Promise<User> => {
+  const res = await api.post<{ data: { user: User } }>("/auth/login", data);
+  return res.data.data.user;
 };
 
-export const logout = async () => {
+export const logout = async (): Promise<void> => {
   await api.post("/auth/logout");
 };
 
-export const getMe = async () => {
-  const response = await api.get<{ data: { user: AuthResponse["user"] } }>(
-    "/auth/me"
-  );
-  return response.data.data.user;
+export const getMe = async (): Promise<User> => {
+  const res = await api.get<{ data: { user: User } }>("/auth/me");
+  return res.data.data.user;
 };
 
-export const getAllUsers = async () => {
-  const response = await api.get<{ data: { users: AuthResponse["user"][] } }>(
-    "/auth/users"
-  );
-  return response.data.data.users;
+export const getAllUsers = async (): Promise<User[]> => {
+  const res = await api.get<{ data: { users: User[] } }>("/auth/users");
+  return res.data.data.users;
 };

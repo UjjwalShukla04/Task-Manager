@@ -1,3 +1,16 @@
+export const PRIORITIES = ["Low", "Medium", "High", "Urgent"] as const;
+export const STATUSES = ["ToDo", "InProgress", "Review", "Completed"] as const;
+
+export type Priority = (typeof PRIORITIES)[number];
+export type TaskStatus = (typeof STATUSES)[number];
+
+export const STATUS_LABELS: Record<TaskStatus, string> = {
+  ToDo: "To Do",
+  InProgress: "In Progress",
+  Review: "Review",
+  Completed: "Completed",
+};
+
 export interface User {
   id: string;
   name: string;
@@ -10,19 +23,25 @@ export interface Task {
   title: string;
   description: string;
   dueDate: string;
-  priority: "Low" | "Medium" | "High" | "Urgent";
-  status: "ToDo" | "InProgress" | "Review" | "Completed";
+  priority: Priority;
+  status: TaskStatus;
   creatorId: string;
-  assignedToId?: string;
+  assignedToId?: string | null;
   creator: User;
-  assignedTo?: User;
+  assignedTo?: User | null;
   createdAt: string;
   updatedAt: string;
 }
 
+export interface Pagination {
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
 export interface AuthResponse {
   user: User;
-  token: string;
 }
 
 export interface ApiResponse<T> {
