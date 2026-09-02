@@ -13,7 +13,8 @@ import {
 } from "@dnd-kit/core";
 import { Plus } from "lucide-react";
 import { useTasks, useUpdateTask, useDeleteTask } from "../hooks/useTasks";
-import { STATUSES, STATUS_LABELS, type Task, type TaskStatus } from "../types";
+import { STATUSES, type Task, type TaskStatus } from "../types";
+import { statusMeta } from "../lib/taskMeta";
 import { TaskCard } from "../components/TaskCard";
 import { CreateTaskModal } from "../components/CreateTaskModal";
 import { TaskCardSkeleton } from "../components/ui/Skeleton";
@@ -39,10 +40,10 @@ function DraggableCard({
       {...attributes}
       {...listeners}
       className={cn(
-        "cursor-grab touch-none rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 active:cursor-grabbing",
-        isDragging && "opacity-40"
+        "touch-none rounded-card focus:outline-none focus-visible:ring-2 focus-visible:ring-accent",
+        isDragging ? "cursor-grabbing opacity-40" : "cursor-grab"
       )}
-      aria-roledescription="Draggable task. Press space or enter to pick up, arrow keys to move between columns."
+      aria-roledescription="Draggable task. Press space to pick up, arrow keys to move, space to drop."
     >
       <TaskCard task={task} onEdit={onEdit} onDelete={onDelete} showStatus={false} />
     </div>
@@ -63,30 +64,33 @@ function Column({
   onDelete: (t: Task) => void;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: status });
+  const meta = statusMeta[status];
+
   return (
     <section
-      ref={setNodeRef}
-      aria-label={STATUS_LABELS[status]}
-      className={cn(
-        "flex min-h-[12rem] flex-col gap-3 rounded-2xl border border-border bg-surface-muted/60 p-3 transition-colors",
-        isOver && "border-indigo-400 bg-indigo-50/60 dark:bg-indigo-950/30"
-      )}
+      aria-label={meta.label}
+      className="flex min-w-0 flex-col rounded-2xl bg-fg/2.5 p-2.5 dark:bg-white/2"
     >
-      <header className="flex items-center justify-between px-1">
-        <h2 className="text-sm font-semibold text-fg">
-          {STATUS_LABELS[status]}
-        </h2>
-        <span className="rounded-full bg-surface px-2 py-0.5 text-xs text-fg-muted">
+      <header className="flex items-center gap-2 px-2 pb-2.5 pt-1">
+        <span className={cn("h-2 w-2 rounded-full", meta.dot)} aria-hidden />
+        <h2 className="text-[13px] font-semibold text-fg">{meta.label}</h2>
+        <span className="rounded-full bg-fg/6 px-1.5 text-[11px] font-medium text-muted dark:bg-white/8">
           {tasks.length}
         </span>
       </header>
 
-      <div className="flex flex-col gap-3">
+      <div
+        ref={setNodeRef}
+        className={cn(
+          "flex flex-1 flex-col gap-2.5 rounded-xl p-1 transition-colors",
+          isOver && "bg-accent/7 ring-2 ring-inset ring-accent/30"
+        )}
+      >
         {loading ? (
           <TaskCardSkeleton />
         ) : tasks.length === 0 ? (
-          <p className="px-1 py-8 text-center text-xs text-fg-muted">
-            Nothing here
+          <p className="px-2 py-10 text-center text-xs text-faint">
+            Drop tasks here
           </p>
         ) : (
           tasks.map((task) => (
@@ -154,14 +158,14 @@ export default function BoardPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-fg">Board</h1>
-          <p className="text-sm text-fg-muted">
+          <h1 className="text-xl font-semibold text-fg">Board</h1>
+          <p className="mt-0.5 text-[13px] text-muted">
             Drag cards between columns to update status.
           </p>
         </div>
-        <Button onClick={openCreate} className="gap-2">
+        <Button onClick={openCreate}>
           <Plus className="h-4 w-4" aria-hidden /> New task
         </Button>
       </div>
@@ -172,7 +176,7 @@ export default function BoardPage() {
         onDragEnd={onDragEnd}
         onDragCancel={() => setActiveId(null)}
       >
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
           {STATUSES.map((status) => (
             <Column
               key={status}
@@ -188,9 +192,9 @@ export default function BoardPage() {
           ))}
         </div>
 
-        <DragOverlay>
+        <DragOverlay dropAnimation={null}>
           {activeTask ? (
-            <div className="w-72 rotate-2">
+            <div className="w-72 rotate-1 opacity-95 shadow-lg">
               <TaskCard task={activeTask} showStatus={false} />
             </div>
           ) : null}

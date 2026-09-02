@@ -34,8 +34,9 @@ export default function App() {
               <Toaster
                 position="top-right"
                 toastOptions={{
+                  duration: 3500,
                   className:
-                    "!bg-surface-raised !text-fg !border !border-border",
+                    "!bg-elevated !text-fg !border !border-line !shadow-lg !rounded-xl !text-[13px]",
                 }}
               />
               <Suspense fallback={<FullPageSpinner />}>

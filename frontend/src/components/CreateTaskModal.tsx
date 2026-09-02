@@ -104,14 +104,15 @@ export function CreateTaskModal({ isOpen, onClose, taskToEdit }: Props) {
         <div>
           <label
             htmlFor="task-description"
-            className="mb-1 block text-sm font-medium text-fg"
+            className="mb-1.5 block text-[13px] font-medium text-fg"
           >
             Description
           </label>
           <textarea
             id="task-description"
             rows={3}
-            className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-fg focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+            className="block w-full resize-y rounded-lg border border-line-strong bg-surface px-3.5 py-2 text-sm text-fg shadow-xs transition-colors placeholder:text-faint focus:border-accent focus:outline-none focus:ring-4 focus:ring-accent/10"
+            placeholder="Add more detail…"
             {...register("description")}
           />
         </div>

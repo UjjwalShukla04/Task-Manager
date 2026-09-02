@@ -4,7 +4,7 @@ export function Skeleton({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        "animate-pulse rounded-md bg-slate-200 dark:bg-slate-700",
+        "animate-pulse rounded-md bg-fg/7 dark:bg-white/7",
         className
       )}
     />
@@ -13,16 +13,16 @@ export function Skeleton({ className }: { className?: string }) {
 
 export function TaskCardSkeleton() {
   return (
-    <div className="rounded-xl border border-border bg-surface-raised p-4">
-      <div className="mb-3 flex items-center justify-between">
-        <Skeleton className="h-5 w-1/2" />
-        <Skeleton className="h-5 w-16" />
+    <div className="rounded-card border border-line bg-elevated p-4 shadow-xs">
+      <div className="mb-3 flex items-center justify-between gap-2">
+        <Skeleton className="h-4 w-1/2" />
+        <Skeleton className="h-4 w-14 rounded-full" />
       </div>
       <Skeleton className="mb-2 h-3 w-full" />
       <Skeleton className="mb-4 h-3 w-2/3" />
-      <div className="flex items-center justify-between border-t border-border pt-3">
-        <Skeleton className="h-8 w-28" />
-        <Skeleton className="h-8 w-16" />
+      <div className="flex items-center justify-between border-t border-line pt-3">
+        <Skeleton className="h-3 w-24" />
+        <Skeleton className="h-6 w-6 rounded-full" />
       </div>
     </div>
   );
@@ -30,7 +30,7 @@ export function TaskCardSkeleton() {
 
 export function TaskGridSkeleton({ count = 6 }: { count?: number }) {
   return (
-    <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {Array.from({ length: count }).map((_, i) => (
         <TaskCardSkeleton key={i} />
       ))}

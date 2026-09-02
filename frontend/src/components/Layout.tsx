@@ -1,40 +1,49 @@
+import { Fragment } from "react";
 import { NavLink, Outlet } from "react-router-dom";
+import {
+  Menu,
+  MenuButton,
+  MenuItem,
+  MenuItems,
+  Transition,
+} from "@headlessui/react";
+import { LayoutGrid, List, LogOut, Check } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useTaskRealtime } from "../hooks/useTasks";
-import { Button } from "./ui/Button";
-import { ThemeToggle } from "./ui/ThemeToggle";
-import { LayoutGrid, List, LogOut } from "lucide-react";
+import { useTheme } from "../context/ThemeContext";
+import { Avatar } from "./ui/Avatar";
 import { cn } from "../utils/cn";
 
 const navLinkClass = ({ isActive }: { isActive: boolean }) =>
   cn(
-    "inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
+    "relative inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-[13px] font-medium transition-colors",
     isActive
-      ? "bg-indigo-600 text-white"
-      : "text-fg-muted hover:bg-surface-muted hover:text-fg"
+      ? "bg-fg/6 text-fg dark:bg-white/8"
+      : "text-muted hover:text-fg"
   );
 
 export default function Layout() {
   const { user, logout } = useAuth();
+  const { theme, setTheme } = useTheme();
   useTaskRealtime();
 
   return (
-    <div className="min-h-screen bg-surface-muted">
+    <div className="min-h-screen bg-app">
       <a
         href="#main"
-        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-indigo-600 focus:px-3 focus:py-2 focus:text-white"
+        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-accent focus:px-3 focus:py-2 focus:text-white"
       >
         Skip to content
       </a>
 
-      <header className="sticky top-0 z-30 border-b border-border bg-surface/80 backdrop-blur">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-6">
-            <span className="flex items-center gap-2 text-lg font-bold">
-              <LayoutGrid className="h-6 w-6 text-indigo-600" aria-hidden />
-              <span className="bg-gradient-to-r from-indigo-500 to-purple-500 bg-clip-text text-transparent">
-                TaskFlow
+      <header className="sticky top-0 z-30 border-b border-line bg-app/70 backdrop-blur-xl">
+        <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
+          <div className="flex items-center gap-5">
+            <span className="flex items-center gap-2 font-semibold tracking-tight">
+              <span className="grid h-7 w-7 place-items-center rounded-lg bg-accent text-white shadow-xs">
+                <LayoutGrid className="h-4 w-4" aria-hidden />
               </span>
+              TaskFlow
             </span>
             <nav className="flex items-center gap-1" aria-label="Views">
               <NavLink to="/" end className={navLinkClass}>
@@ -46,25 +55,60 @@ export default function Layout() {
             </nav>
           </div>
 
-          <div className="flex items-center gap-2">
-            <span className="hidden rounded-full border border-border bg-surface-muted px-3 py-1.5 text-sm text-fg-muted sm:inline">
-              {user?.name}
-            </span>
-            <ThemeToggle />
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => logout()}
-              className="gap-2"
+          <Menu as="div" className="relative">
+            <MenuButton className="flex items-center gap-2 rounded-full p-0.5 pr-2 transition-colors hover:bg-fg/5 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent dark:hover:bg-white/6">
+              {user && <Avatar name={user.name} id={user.id} size="md" />}
+              <span className="hidden text-[13px] font-medium text-fg sm:inline">
+                {user?.name}
+              </span>
+            </MenuButton>
+            <Transition
+              as={Fragment}
+              enter="transition ease-out duration-100"
+              enterFrom="opacity-0 scale-95"
+              enterTo="opacity-100 scale-100"
+              leave="transition ease-in duration-75"
+              leaveFrom="opacity-100 scale-100"
+              leaveTo="opacity-0 scale-95"
             >
-              <LogOut className="h-4 w-4" aria-hidden />
-              <span className="hidden sm:inline">Logout</span>
-            </Button>
-          </div>
+              <MenuItems className="absolute right-0 mt-2 w-56 origin-top-right overflow-hidden rounded-xl border border-line bg-elevated p-1 shadow-lg focus:outline-none">
+                <div className="px-3 py-2">
+                  <p className="truncate text-[13px] font-medium text-fg">
+                    {user?.name}
+                  </p>
+                  <p className="truncate text-xs text-muted">{user?.email}</p>
+                </div>
+                <div className="my-1 h-px bg-line" />
+                <p className="px-3 pb-1 pt-1.5 text-[11px] font-medium uppercase tracking-wide text-faint">
+                  Theme
+                </p>
+                {(["light", "dark", "system"] as const).map((t) => (
+                  <MenuItem key={t}>
+                    <button
+                      onClick={() => setTheme(t)}
+                      className="flex w-full items-center justify-between rounded-lg px-3 py-1.5 text-[13px] capitalize text-fg data-[focus]:bg-fg/6 dark:data-[focus]:bg-white/6"
+                    >
+                      {t}
+                      {theme === t && <Check className="h-3.5 w-3.5 text-accent" />}
+                    </button>
+                  </MenuItem>
+                ))}
+                <div className="my-1 h-px bg-line" />
+                <MenuItem>
+                  <button
+                    onClick={() => logout()}
+                    className="flex w-full items-center gap-2 rounded-lg px-3 py-1.5 text-[13px] text-rose-600 data-[focus]:bg-rose-500/10 dark:text-rose-400"
+                  >
+                    <LogOut className="h-3.5 w-3.5" aria-hidden /> Sign out
+                  </button>
+                </MenuItem>
+              </MenuItems>
+            </Transition>
+          </Menu>
         </div>
       </header>
 
-      <main id="main" className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      <main id="main" className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
         <Outlet />
       </main>
     </div>

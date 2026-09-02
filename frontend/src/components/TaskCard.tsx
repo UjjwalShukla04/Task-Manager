@@ -2,8 +2,9 @@ import { format, isPast, isToday } from "date-fns";
 import { Pencil, Trash2, CalendarClock, AlertTriangle } from "lucide-react";
 import type { Task } from "../types";
 import { PriorityBadge, StatusBadge } from "./ui/Badge";
-import { Button } from "./ui/Button";
+import { Avatar } from "./ui/Avatar";
 import { cn } from "../utils/cn";
+import { priorityMeta } from "../lib/taskMeta";
 import { useAuth } from "../context/AuthContext";
 
 interface TaskCardProps {
@@ -27,95 +28,105 @@ export function TaskCard({
   const isCreator = user?.id === task.creatorId;
   const due = new Date(task.dueDate);
   const overdue = isPast(due) && !isToday(due) && task.status !== "Completed";
+  const dueToday = isToday(due) && task.status !== "Completed";
 
   return (
     <article
       className={cn(
-        "rounded-xl border bg-surface-raised p-4 shadow-sm transition-shadow hover:shadow-md",
-        overdue ? "border-red-300 dark:border-red-800" : "border-border",
+        "group card-hover relative overflow-hidden rounded-card border border-line bg-elevated shadow-xs",
         className
       )}
     >
-      <div className="mb-2 flex items-start justify-between gap-2">
-        <h3 className="line-clamp-2 font-medium text-fg" title={task.title}>
-          {task.title}
-        </h3>
-        <div className="flex shrink-0 flex-wrap justify-end gap-1">
-          <PriorityBadge priority={task.priority} />
-          {showStatus && <StatusBadge status={task.status} />}
-        </div>
-      </div>
-
-      {!compact && task.description && (
-        <p
-          className="mb-3 line-clamp-2 text-sm text-fg-muted"
-          title={task.description}
-        >
-          {task.description}
-        </p>
-      )}
-
-      <div className="flex items-center justify-between gap-3 text-sm">
-        <span
-          className={cn(
-            "inline-flex items-center gap-1.5",
-            overdue ? "font-medium text-red-600 dark:text-red-400" : "text-fg-muted"
-          )}
-        >
-          {overdue ? (
-            <AlertTriangle className="h-4 w-4" aria-hidden />
-          ) : (
-            <CalendarClock className="h-4 w-4" aria-hidden />
-          )}
-          <span>
-            {overdue ? "Overdue · " : ""}
-            {format(due, "MMM d, yyyy")}
-          </span>
-        </span>
-
-        {task.assignedTo && (
-          <span
-            className="inline-flex items-center gap-1.5 text-fg-muted"
-            title={`Assigned to ${task.assignedTo.name}`}
-          >
-            <span
-              className="flex h-6 w-6 items-center justify-center rounded-full bg-indigo-100 text-xs font-semibold text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300"
-              aria-hidden
-            >
-              {task.assignedTo.name.charAt(0).toUpperCase()}
-            </span>
-            <span className="hidden text-xs sm:inline">
-              {task.assignedTo.name}
-            </span>
-          </span>
+      {/* priority accent strip */}
+      <span
+        className={cn(
+          "absolute inset-y-0 left-0 w-0.5",
+          priorityMeta[task.priority].dot
         )}
-      </div>
+        aria-hidden
+      />
 
-      {(onEdit || onDelete) && (
-        <div className="mt-3 flex justify-end gap-1 border-t border-border pt-2">
-          {onEdit && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => onEdit(task)}
-              aria-label={`Edit ${task.title}`}
-            >
-              <Pencil className="h-4 w-4" aria-hidden />
-            </Button>
-          )}
-          {onDelete && isCreator && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => onDelete(task)}
-              aria-label={`Delete ${task.title}`}
-              className="text-red-500 hover:text-red-600"
-            >
-              <Trash2 className="h-4 w-4" aria-hidden />
-            </Button>
-          )}
+      <div className="p-4 pl-[1.125rem]">
+        <div className="mb-2 flex items-start justify-between gap-2">
+          <h3
+            className="line-clamp-2 text-sm font-medium leading-snug text-fg"
+            title={task.title}
+          >
+            {task.title}
+          </h3>
+          <div className="flex shrink-0 flex-wrap justify-end gap-1">
+            <PriorityBadge priority={task.priority} />
+            {showStatus && <StatusBadge status={task.status} />}
+          </div>
         </div>
-      )}
+
+        {!compact && task.description && (
+          <p
+            className="mb-3 line-clamp-2 text-[13px] leading-relaxed text-muted"
+            title={task.description}
+          >
+            {task.description}
+          </p>
+        )}
+
+        <div className="mt-3 flex items-center justify-between gap-3 border-t border-line pt-3 text-[13px]">
+          <span
+            className={cn(
+              "inline-flex items-center gap-1.5",
+              overdue
+                ? "font-medium text-rose-600 dark:text-rose-400"
+                : dueToday
+                  ? "font-medium text-amber-600 dark:text-amber-400"
+                  : "text-muted"
+            )}
+          >
+            {overdue ? (
+              <AlertTriangle className="h-3.5 w-3.5" aria-hidden />
+            ) : (
+              <CalendarClock className="h-3.5 w-3.5" aria-hidden />
+            )}
+            <span>
+              {overdue ? "Overdue · " : dueToday ? "Today · " : ""}
+              {format(due, "MMM d")}
+            </span>
+          </span>
+
+          <div className="flex items-center gap-1">
+            {task.assignedTo ? (
+              <Avatar
+                name={task.assignedTo.name}
+                id={task.assignedTo.id}
+                size="sm"
+              />
+            ) : (
+              <span className="text-xs text-faint">Unassigned</span>
+            )}
+
+            {(onEdit || (onDelete && isCreator)) && (
+              <div className="ml-1 flex items-center gap-0.5 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100">
+                {onEdit && (
+                  <button
+                    onClick={() => onEdit(task)}
+                    aria-label={`Edit ${task.title}`}
+                    className="rounded-md p-1.5 text-faint transition-colors hover:bg-fg/6 hover:text-fg dark:hover:bg-white/6"
+                  >
+                    <Pencil className="h-3.5 w-3.5" aria-hidden />
+                  </button>
+                )}
+                {onDelete && isCreator && (
+                  <button
+                    onClick={() => onDelete(task)}
+                    aria-label={`Delete ${task.title}`}
+                    className="rounded-md p-1.5 text-faint transition-colors hover:bg-rose-500/10 hover:text-rose-500"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" aria-hidden />
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
     </article>
   );
 }

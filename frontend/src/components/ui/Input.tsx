@@ -5,12 +5,11 @@ interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   label?: string;
   error?: string;
   hint?: string;
-  /** Keep the label in the a11y tree but hide it visually. */
   srOnlyLabel?: boolean;
 }
 
-const fieldClasses =
-  "flex h-10 w-full rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-fg)] placeholder:text-[var(--color-fg-muted)] focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus:border-transparent disabled:cursor-not-allowed disabled:opacity-50";
+export const fieldClass =
+  "block w-full rounded-lg border border-line-strong bg-surface px-3.5 text-sm text-fg shadow-xs transition-colors placeholder:text-faint focus:border-accent focus:outline-none focus:ring-4 focus:ring-accent/10 disabled:cursor-not-allowed disabled:opacity-50";
 
 const Input = forwardRef<HTMLInputElement, InputProps>(
   ({ className, label, error, hint, srOnlyLabel, id, ...props }, ref) => {
@@ -28,7 +27,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
           <label
             htmlFor={inputId}
             className={cn(
-              "mb-1 block text-sm font-medium text-fg",
+              "mb-1.5 block text-[13px] font-medium text-fg",
               srOnlyLabel && "sr-only"
             )}
           >
@@ -38,18 +37,23 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
         <input
           ref={ref}
           id={inputId}
-          className={cn(fieldClasses, error && "border-red-500 focus-visible:ring-red-500", className)}
+          className={cn(
+            fieldClass,
+            "h-10",
+            error && "border-rose-400 focus:border-rose-500 focus:ring-rose-500/10",
+            className
+          )}
           aria-invalid={!!error || undefined}
           aria-describedby={describedBy}
           {...props}
         />
         {hint && !error && (
-          <p id={`${inputId}-hint`} className="mt-1 text-xs text-fg-muted">
+          <p id={`${inputId}-hint`} className="mt-1.5 text-xs text-muted">
             {hint}
           </p>
         )}
         {error && (
-          <p id={`${inputId}-error`} className="mt-1 text-xs text-red-500">
+          <p id={`${inputId}-error`} className="mt-1.5 text-xs text-rose-500">
             {error}
           </p>
         )}

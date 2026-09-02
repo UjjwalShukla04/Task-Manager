@@ -1,10 +1,11 @@
 import { type SelectHTMLAttributes, forwardRef, useId } from "react";
+import { ChevronDown } from "lucide-react";
 import { cn } from "../../utils/cn";
+import { fieldClass } from "./Input";
 
 interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
   label?: string;
   error?: string;
-  /** Render the label visually hidden (still read by screen readers). */
   srOnlyLabel?: boolean;
 }
 
@@ -18,27 +19,34 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
           <label
             htmlFor={selectId}
             className={cn(
-              "mb-1 block text-sm font-medium text-fg",
+              "mb-1.5 block text-[13px] font-medium text-fg",
               srOnlyLabel && "sr-only"
             )}
           >
             {label}
           </label>
         )}
-        <select
-          ref={ref}
-          id={selectId}
-          className={cn(
-            "h-10 w-full rounded-md border border-border bg-surface px-3 text-sm text-fg focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500",
-            error && "border-red-500",
-            className
-          )}
-          aria-invalid={!!error || undefined}
-          {...props}
-        >
-          {children}
-        </select>
-        {error && <p className="mt-1 text-xs text-red-500">{error}</p>}
+        <div className="relative">
+          <select
+            ref={ref}
+            id={selectId}
+            className={cn(
+              fieldClass,
+              "h-10 cursor-pointer appearance-none pr-9",
+              error && "border-rose-400",
+              className
+            )}
+            aria-invalid={!!error || undefined}
+            {...props}
+          >
+            {children}
+          </select>
+          <ChevronDown
+            className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-faint"
+            aria-hidden
+          />
+        </div>
+        {error && <p className="mt-1.5 text-xs text-rose-500">{error}</p>}
       </div>
     );
   }
