@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
-import { LayoutGrid, Check } from "lucide-react";
+import { Check } from "lucide-react";
+import { Brand } from "./ui/Brand";
 import { ThemeToggle } from "./ui/ThemeToggle";
 
 const highlights = [
@@ -25,21 +26,16 @@ export function AuthShell({
     <div className="flex min-h-screen bg-app">
       {/* form */}
       <div className="flex w-full flex-col px-6 py-8 sm:px-10 lg:w-[46%] lg:px-16 xl:px-24">
-        <div className="flex items-center justify-between">
-          <span className="flex items-center gap-2 font-semibold tracking-tight">
-            <span className="grid h-7 w-7 place-items-center rounded-lg bg-accent text-white shadow-xs">
-              <LayoutGrid className="h-4 w-4" aria-hidden />
-            </span>
-            TaskFlow
-          </span>
+        <div className="flex items-center justify-end">
           <ThemeToggle />
         </div>
 
         <div className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center py-10">
-          <h1 className="text-[26px] font-semibold tracking-tight text-fg">
+          <Brand size="xl" className="mb-9" />
+          <h1 className="text-[28px] font-bold tracking-tight text-fg">
             {heading}
           </h1>
-          <p className="mt-1.5 text-sm text-muted">{subheading}</p>
+          <p className="mt-2 text-[15px] text-muted">{subheading}</p>
           <div className="mt-8">{children}</div>
           <p className="mt-6 text-center text-[14px] text-muted">{footer}</p>
         </div>

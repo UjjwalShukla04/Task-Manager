@@ -8,6 +8,7 @@ import {
   Transition,
 } from "@headlessui/react";
 import { LayoutGrid, List, LogOut, Check, Command } from "lucide-react";
+import { Brand } from "./ui/Brand";
 import { useAuth } from "../context/AuthContext";
 import { useTaskRealtime } from "../hooks/useTasks";
 import { useTheme } from "../context/ThemeContext";
@@ -44,12 +45,7 @@ function Chrome() {
       <header className="sticky top-0 z-30 border-b border-line bg-app/70 backdrop-blur-xl">
         <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
           <div className="flex items-center gap-5">
-            <span className="flex items-center gap-2 font-semibold tracking-tight">
-              <span className="grid h-7 w-7 place-items-center rounded-lg bg-accent text-white shadow-xs">
-                <LayoutGrid className="h-4 w-4" aria-hidden />
-              </span>
-              TaskFlow
-            </span>
+            <Brand size="sm" />
             <nav className="flex items-center gap-1" aria-label="Views">
               <NavLink to="/" end className={navLinkClass}>
                 <LayoutGrid className="h-4 w-4" aria-hidden /> Board
