@@ -14,8 +14,12 @@ interface ModalProps {
   title: string;
   description?: string;
   children: ReactNode;
-  size?: "md" | "lg";
+  footer?: ReactNode;
+  size?: "sm" | "md" | "lg";
+  initialFocus?: React.RefObject<any>;
 }
+
+const widths = { sm: "max-w-sm", md: "max-w-md", lg: "max-w-lg" };
 
 export function Modal({
   isOpen,
@@ -23,11 +27,18 @@ export function Modal({
   title,
   description,
   children,
+  footer,
   size = "md",
+  initialFocus,
 }: ModalProps) {
   return (
     <Transition appear show={isOpen} as={Fragment}>
-      <Dialog as="div" className="relative z-50" onClose={onClose}>
+      <Dialog
+        as="div"
+        className="relative z-50"
+        onClose={onClose}
+        initialFocus={initialFocus}
+      >
         <TransitionChild
           as={Fragment}
           enter="ease-out duration-200"
@@ -52,9 +63,7 @@ export function Modal({
               leaveTo="opacity-0 scale-[0.98]"
             >
               <DialogPanel
-                className={`w-full ${
-                  size === "lg" ? "max-w-lg" : "max-w-md"
-                } overflow-hidden rounded-2xl border border-line bg-elevated shadow-lg`}
+                className={`flex max-h-[calc(100vh-2rem)] w-full ${widths[size]} flex-col overflow-hidden rounded-2xl border border-line bg-elevated shadow-lg`}
               >
                 <div className="flex items-start justify-between gap-4 px-6 pt-5">
                   <div>
@@ -62,7 +71,9 @@ export function Modal({
                       {title}
                     </DialogTitle>
                     {description && (
-                      <p className="mt-0.5 text-[13px] text-muted">{description}</p>
+                      <p className="mt-0.5 text-[13px] text-muted">
+                        {description}
+                      </p>
                     )}
                   </div>
                   <button
@@ -73,7 +84,16 @@ export function Modal({
                     <X className="h-4 w-4" aria-hidden />
                   </button>
                 </div>
-                <div className="px-6 pb-6 pt-4">{children}</div>
+
+                <div className="min-h-0 flex-1 overflow-y-auto px-6 py-4">
+                  {children}
+                </div>
+
+                {footer && (
+                  <div className="border-t border-line bg-surface/50 px-6 py-3">
+                    {footer}
+                  </div>
+                )}
               </DialogPanel>
             </TransitionChild>
           </div>

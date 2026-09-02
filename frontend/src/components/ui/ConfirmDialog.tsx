@@ -25,20 +25,27 @@ export function ConfirmDialog({
   onCancel,
 }: ConfirmDialogProps) {
   return (
-    <Modal isOpen={isOpen} onClose={onCancel} title={title}>
+    <Modal
+      isOpen={isOpen}
+      onClose={onCancel}
+      title={title}
+      size="sm"
+      footer={
+        <div className="flex justify-end gap-2">
+          <Button variant="ghost" onClick={onCancel} disabled={isLoading}>
+            {cancelLabel}
+          </Button>
+          <Button
+            variant={danger ? "danger" : "primary"}
+            onClick={onConfirm}
+            isLoading={isLoading}
+          >
+            {confirmLabel}
+          </Button>
+        </div>
+      }
+    >
       <p className="text-sm text-muted">{message}</p>
-      <div className="mt-6 flex justify-end gap-2">
-        <Button variant="ghost" onClick={onCancel} disabled={isLoading}>
-          {cancelLabel}
-        </Button>
-        <Button
-          variant={danger ? "danger" : "primary"}
-          onClick={onConfirm}
-          isLoading={isLoading}
-        >
-          {confirmLabel}
-        </Button>
-      </div>
     </Modal>
   );
 }
