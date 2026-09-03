@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Plus, Search, SlidersHorizontal } from "lucide-react";
 import { useDebouncedValue } from "../hooks/useDebouncedValue";
-import { useTasks, useDeleteTask } from "../hooks/useTasks";
+import { useTasks, useDeleteTask, useUpdateTask } from "../hooks/useTasks";
 import { useTaskComposer } from "../context/TaskComposerContext";
 import type { TaskFilters } from "../api/tasks";
 import { PRIORITIES, STATUSES, STATUS_LABELS, type Task } from "../types";
@@ -23,6 +23,7 @@ export default function TasksPage() {
 
   const [toDelete, setToDelete] = useState<Task | undefined>();
   const deleteMutation = useDeleteTask();
+  const updateMutation = useUpdateTask();
   const { openCreate, openEdit } = useTaskComposer();
 
   const page = Number(params.get("page") ?? "1");
@@ -175,7 +176,14 @@ export default function TasksPage() {
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {tasks.map((task) => (
               <div key={task.id} className="animate-in">
-                <TaskCard task={task} onEdit={openEdit} onDelete={setToDelete} />
+                <TaskCard
+                  task={task}
+                  onEdit={openEdit}
+                  onDelete={setToDelete}
+                  onStatusChange={(t, status) =>
+                    updateMutation.mutate({ id: t.id, data: { status } })
+                  }
+                />
               </div>
             ))}
           </div>

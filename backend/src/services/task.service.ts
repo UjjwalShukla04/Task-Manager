@@ -38,8 +38,26 @@ export class TaskService {
     const task = await taskRepository.findById(taskId);
     if (!task) throw new AppError("Task not found", 404);
 
-    if (task.creatorId !== userId && task.assignedToId !== userId) {
+    const isCreator = task.creatorId === userId;
+    const isAssignee = task.assignedToId === userId;
+    if (!isCreator && !isAssignee) {
       throw new AppError("Not authorized to update this task", 403);
+    }
+
+    // The assignee may only move the task through statuses; every other
+    // field (title, description, due date, priority, assignee) is the
+    // creator's to change.
+    if (!isCreator) {
+      const touched = Object.keys(data).filter(
+        (k) => data[k as keyof UpdateTaskInput] !== undefined
+      );
+      const illegal = touched.filter((k) => k !== "status");
+      if (illegal.length > 0) {
+        throw new AppError(
+          "Assignees can only change the task status",
+          403
+        );
+      }
     }
 
     if (data.assignedToId && data.assignedToId !== task.assignedToId) {

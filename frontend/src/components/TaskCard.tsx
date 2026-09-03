@@ -8,7 +8,12 @@ import {
   GripVertical,
   Flag,
 } from "lucide-react";
-import type { Task } from "../types";
+import {
+  STATUSES,
+  STATUS_LABELS,
+  type Task,
+  type TaskStatus,
+} from "../types";
 import { StatusBadge } from "./ui/Badge";
 import { Avatar } from "./ui/Avatar";
 import { cn } from "../utils/cn";
@@ -25,6 +30,7 @@ interface TaskCardProps {
   task: Task;
   onEdit?: (task: Task) => void;
   onDelete?: (task: Task) => void;
+  onStatusChange?: (task: Task, status: TaskStatus) => void;
   showStatus?: boolean;
   showTimestamp?: boolean;
   compact?: boolean;
@@ -36,6 +42,7 @@ export function TaskCard({
   task,
   onEdit,
   onDelete,
+  onStatusChange,
   showStatus = true,
   showTimestamp = true,
   compact = false,
@@ -44,20 +51,25 @@ export function TaskCard({
 }: TaskCardProps) {
   const { user } = useAuth();
   const isCreator = user?.id === task.creatorId;
+  const isAssignee = user?.id === task.assignedToId;
   const due = new Date(task.dueDate);
   const overdue = isPast(due) && !isToday(due) && task.status !== "Completed";
   const dueToday = isToday(due) && task.status !== "Completed";
   const done = task.status === "Completed";
   const pr = priorityMeta[task.priority];
 
-  // On the list view (no drag handle) the whole card opens the editor.
-  const cardClickable = !!onEdit && !dragHandleProps;
+  // Only the creator edits/deletes task details. The assignee can move the
+  // task through statuses (matching the backend permission model).
+  const canEdit = isCreator && !!onEdit;
+  const canDelete = isCreator && !!onDelete;
+  const canChangeStatus = (isCreator || isAssignee) && !!onStatusChange;
+
+  const cardClickable = canEdit && !dragHandleProps;
   const handleCardClick = (e: MouseEvent) => {
     if (!cardClickable) return;
-    if ((e.target as HTMLElement).closest("button,a")) return;
+    if ((e.target as HTMLElement).closest("button,a,select")) return;
     onEdit!(task);
   };
-
   const stop = (e: MouseEvent) => e.stopPropagation();
 
   return (
@@ -81,14 +93,14 @@ export function TaskCard({
         aria-hidden
       />
 
-      {/* hover action bar */}
-      {(onEdit || (onDelete && isCreator)) && (
+      {/* hover action bar (creator only) */}
+      {(canEdit || canDelete) && (
         <div className="absolute right-2 top-2 z-10 flex items-center gap-0.5 rounded-lg border border-line bg-elevated/90 p-0.5 opacity-0 shadow-sm backdrop-blur transition-opacity focus-within:opacity-100 group-hover:opacity-100">
-          {onEdit && (
+          {canEdit && (
             <button
               onClick={(e) => {
                 stop(e);
-                onEdit(task);
+                onEdit!(task);
               }}
               aria-label={`Edit ${task.title}`}
               className="rounded-md p-1.5 text-faint transition-colors hover:bg-fg/6 hover:text-fg dark:hover:bg-white/6"
@@ -96,11 +108,11 @@ export function TaskCard({
               <Pencil className="h-3.5 w-3.5" aria-hidden />
             </button>
           )}
-          {onDelete && isCreator && (
+          {canDelete && (
             <button
               onClick={(e) => {
                 stop(e);
-                onDelete(task);
+                onDelete!(task);
               }}
               aria-label={`Delete ${task.title}`}
               className="rounded-md p-1.5 text-faint transition-colors hover:bg-rose-500/10 hover:text-rose-500"
@@ -155,7 +167,26 @@ export function TaskCard({
             {task.priority}
           </span>
 
-          {showStatus && <StatusBadge status={task.status} />}
+          {showStatus &&
+            (canChangeStatus ? (
+              <select
+                value={task.status}
+                onClick={stop}
+                onChange={(e) =>
+                  onStatusChange!(task, e.target.value as TaskStatus)
+                }
+                aria-label={`Status of ${task.title}`}
+                className="h-7 cursor-pointer rounded-md border border-line bg-surface px-1.5 text-[12px] font-medium text-fg focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+              >
+                {STATUSES.map((s) => (
+                  <option key={s} value={s}>
+                    {STATUS_LABELS[s]}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <StatusBadge status={task.status} />
+            ))}
 
           <span className="flex-1" />
 

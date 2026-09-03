@@ -81,6 +81,38 @@ describe("TaskService", () => {
       expect(mockTaskRepo.prototype.update).not.toHaveBeenCalled();
     });
 
+    it("lets an assignee change only the status", async () => {
+      mockTaskRepo.prototype.findById.mockResolvedValue({
+        id: "t1",
+        creatorId: "owner",
+        assignedToId: "assignee",
+      } as any);
+      mockTaskRepo.prototype.update.mockResolvedValue({
+        id: "t1",
+        creatorId: "owner",
+        assignedToId: "assignee",
+        status: "Completed",
+      } as any);
+
+      await service.updateTask("assignee", "t1", { status: "Completed" });
+      expect(mockTaskRepo.prototype.update).toHaveBeenCalledWith("t1", {
+        status: "Completed",
+      });
+    });
+
+    it("blocks an assignee from editing other fields", async () => {
+      mockTaskRepo.prototype.findById.mockResolvedValue({
+        id: "t1",
+        creatorId: "owner",
+        assignedToId: "assignee",
+      } as any);
+
+      await expect(
+        service.updateTask("assignee", "t1", { title: "hijacked" })
+      ).rejects.toThrow("Assignees can only change the task status");
+      expect(mockTaskRepo.prototype.update).not.toHaveBeenCalled();
+    });
+
     it("updates and notifies current + previous participants", async () => {
       const existing = { id: "t1", creatorId: "u1", assignedToId: "u2" };
       const updated = { ...existing, assignedToId: "u3", status: "InProgress" };
