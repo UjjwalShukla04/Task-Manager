@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   DndContext,
   DragOverlay,
@@ -11,7 +11,12 @@ import {
   type DragEndEvent,
   type DragStartEvent,
 } from "@dnd-kit/core";
-import { Plus, CalendarClock } from "lucide-react";
+import {
+  Plus,
+  CalendarClock,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import { useTasks, useUpdateTask, useDeleteTask } from "../hooks/useTasks";
 import { useTaskComposer } from "../context/TaskComposerContext";
 import type { Task } from "../types";
@@ -143,6 +148,31 @@ export default function DeadlinePage() {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [toDelete, setToDelete] = useState<Task | undefined>();
 
+  // Horizontal scroll controls for the column strip.
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [scroll, setScroll] = useState({ left: false, right: false });
+
+  const syncArrows = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    setScroll({
+      left: el.scrollLeft > 4,
+      right: el.scrollLeft + el.clientWidth < el.scrollWidth - 4,
+    });
+  }, []);
+
+  useEffect(() => {
+    syncArrows();
+    window.addEventListener("resize", syncArrows);
+    return () => window.removeEventListener("resize", syncArrows);
+  }, [syncArrows, data]);
+
+  const nudge = (dir: -1 | 1) => {
+    const el = scrollRef.current;
+    if (!el) return;
+    el.scrollBy({ left: dir * el.clientWidth * 0.8, behavior: "smooth" });
+  };
+
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
     useSensor(KeyboardSensor)
@@ -207,20 +237,47 @@ export default function DeadlinePage() {
           onDragEnd={onDragEnd}
           onDragCancel={() => setActiveId(null)}
         >
-          <div className="-mx-4 overflow-x-auto px-4 pb-3 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 [scrollbar-width:thin]">
-            <div className="flex gap-3">
-              {DEADLINE_BUCKETS.map((b) => (
-                <Column
-                  key={b}
-                  bucket={b}
-                  tasks={groups[b]}
-                  loading={isLoading}
-                  onEdit={openEdit}
-                  onDelete={setToDelete}
-                  onStatusChange={changeStatus}
-                />
-              ))}
+          <div className="relative -mx-4 sm:-mx-6 lg:-mx-8">
+            <div
+              ref={scrollRef}
+              onScroll={syncArrows}
+              className="overflow-x-auto px-4 pb-3 sm:px-6 lg:px-8 [scrollbar-width:thin]"
+            >
+              <div className="flex gap-3">
+                {DEADLINE_BUCKETS.map((b) => (
+                  <Column
+                    key={b}
+                    bucket={b}
+                    tasks={groups[b]}
+                    loading={isLoading}
+                    onEdit={openEdit}
+                    onDelete={setToDelete}
+                    onStatusChange={changeStatus}
+                  />
+                ))}
+              </div>
             </div>
+
+            {scroll.left && (
+              <button
+                type="button"
+                onClick={() => nudge(-1)}
+                aria-label="Scroll columns left"
+                className="absolute left-1 top-1/2 z-20 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full border border-line bg-elevated/95 text-muted shadow-md backdrop-blur transition hover:text-fg"
+              >
+                <ChevronLeft className="h-5 w-5" aria-hidden />
+              </button>
+            )}
+            {scroll.right && (
+              <button
+                type="button"
+                onClick={() => nudge(1)}
+                aria-label="Scroll columns right"
+                className="absolute right-1 top-1/2 z-20 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full border border-line bg-elevated/95 text-muted shadow-md backdrop-blur transition hover:text-fg"
+              >
+                <ChevronRight className="h-5 w-5" aria-hidden />
+              </button>
+            )}
           </div>
 
           <DragOverlay>
