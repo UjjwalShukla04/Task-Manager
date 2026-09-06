@@ -7,6 +7,7 @@ import {
   AlertTriangle,
   GripVertical,
   Flag,
+  ChevronRight,
 } from "lucide-react";
 import {
   STATUSES,
@@ -208,28 +209,49 @@ export function TaskCard({
             {overdue ? "Overdue" : dueToday ? "Today" : format(due, "MMM d")}
           </span>
 
-          {task.assignedTo ? (
+          {/* assigned by → assigned to */}
+          <span className="flex items-center gap-0.5">
             <Avatar
-              name={task.assignedTo.name}
-              id={task.assignedTo.id}
-              size="sm"
+              name={task.creator.name}
+              id={task.creator.id}
+              size="xs"
+              className="opacity-70"
             />
-          ) : (
-            <span
-              className="grid h-6 w-6 place-items-center rounded-full border border-dashed border-line-strong text-faint"
-              title="Unassigned"
-              aria-label="Unassigned"
-            >
-              <span className="text-[14px] leading-none">+</span>
-            </span>
-          )}
+            {task.assignedToId !== task.creatorId && (
+              <>
+                <ChevronRight
+                  className="h-3 w-3 shrink-0 text-faint"
+                  aria-hidden
+                />
+                {task.assignedTo ? (
+                  <Avatar
+                    name={task.assignedTo.name}
+                    id={task.assignedTo.id}
+                    size="sm"
+                  />
+                ) : (
+                  <span
+                    className="grid h-6 w-6 place-items-center rounded-full border border-dashed border-line-strong text-faint"
+                    title="Unassigned"
+                    aria-label="Unassigned"
+                  >
+                    <span className="text-[14px] leading-none">+</span>
+                  </span>
+                )}
+              </>
+            )}
+          </span>
         </div>
 
-        {!compact && showTimestamp && (
-          <p className="mt-2 text-[11px] text-faint">
-            Updated {relativeTime(task.updatedAt)}
-          </p>
-        )}
+        <p className="mt-2 text-[11px] leading-relaxed text-faint">
+          By {task.creator.name}
+          {task.assignedTo && task.assignedToId !== task.creatorId
+            ? ` · assigned to ${task.assignedTo.name}`
+            : ""}
+          {!compact && showTimestamp
+            ? ` · updated ${relativeTime(task.updatedAt)}`
+            : ""}
+        </p>
       </div>
     </article>
   );
