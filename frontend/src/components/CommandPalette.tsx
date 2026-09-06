@@ -19,6 +19,7 @@ import {
   Moon,
   Monitor,
   CornerDownLeft,
+  CalendarClock,
 } from "lucide-react";
 import { useTheme } from "../context/ThemeContext";
 import { cn } from "../utils/cn";
@@ -69,7 +70,14 @@ export function CommandPalette({ onNewTask }: { onNewTask: () => void }) {
         label: "Go to Board",
         icon: LayoutGrid,
         run: () => navigate("/"),
-        keywords: "kanban",
+        keywords: "kanban status",
+      },
+      {
+        id: "deadline",
+        label: "Go to Deadline",
+        icon: CalendarClock,
+        run: () => navigate("/deadline"),
+        keywords: "due date schedule overdue",
       },
       {
         id: "list",

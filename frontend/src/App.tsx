@@ -13,6 +13,7 @@ const Login = lazy(() => import("./pages/Login"));
 const Register = lazy(() => import("./pages/Register"));
 const BoardPage = lazy(() => import("./pages/Board"));
 const ListPage = lazy(() => import("./pages/Tasks"));
+const DeadlinePage = lazy(() => import("./pages/Deadline"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -49,6 +50,7 @@ export default function App() {
                   <Route element={<RequireAuth />}>
                     <Route path="/" element={<Layout />}>
                       <Route index element={<BoardPage />} />
+                      <Route path="deadline" element={<DeadlinePage />} />
                       <Route path="list" element={<ListPage />} />
                     </Route>
                   </Route>

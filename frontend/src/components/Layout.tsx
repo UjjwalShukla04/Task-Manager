@@ -7,7 +7,14 @@ import {
   MenuItems,
   Transition,
 } from "@headlessui/react";
-import { LayoutGrid, List, LogOut, Check, Command } from "lucide-react";
+import {
+  LayoutGrid,
+  List,
+  LogOut,
+  Check,
+  Command,
+  CalendarClock,
+} from "lucide-react";
 import { Brand } from "./ui/Brand";
 import { useAuth } from "../context/AuthContext";
 import { useTaskRealtime } from "../hooks/useTasks";
@@ -49,6 +56,9 @@ function Chrome() {
             <nav className="flex items-center gap-1" aria-label="Views">
               <NavLink to="/" end className={navLinkClass}>
                 <LayoutGrid className="h-4 w-4" aria-hidden /> Board
+              </NavLink>
+              <NavLink to="/deadline" className={navLinkClass}>
+                <CalendarClock className="h-4 w-4" aria-hidden /> Deadline
               </NavLink>
               <NavLink to="/list" className={navLinkClass}>
                 <List className="h-4 w-4" aria-hidden /> List
