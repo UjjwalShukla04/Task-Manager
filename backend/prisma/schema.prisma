@@ -22,15 +22,23 @@ enum TaskStatus {
   Completed
 }
 
+enum ActivityType {
+  Created
+  StatusChanged
+  Reassigned
+  Updated
+}
+
 model User {
-  id            String   @id @default(uuid())
-  email         String   @unique
+  id            String         @id @default(uuid())
+  email         String         @unique
   password      String
   name          String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  tasksCreated  Task[]   @relation("TaskCreator")
-  tasksAssigned Task[]   @relation("TaskAssignee")
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  tasksCreated  Task[]         @relation("TaskCreator")
+  tasksAssigned Task[]         @relation("TaskAssignee")
+  activity      TaskActivity[]
 }
 
 model Task {
@@ -46,10 +54,24 @@ model Task {
   assignedTo   User?      @relation("TaskAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
+  activity     TaskActivity[]
 
   @@index([creatorId])
   @@index([assignedToId])
   @@index([status])
   @@index([priority])
   @@index([dueDate])
+}
+
+model TaskActivity {
+  id        String       @id @default(uuid())
+  taskId    String
+  task      Task         @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  actorId   String
+  actor     User         @relation(fields: [actorId], references: [id], onDelete: Cascade)
+  type      ActivityType
+  detail    Json?
+  createdAt DateTime     @default(now())
+
+  @@index([taskId, createdAt])
 }

@@ -100,6 +100,34 @@ describe("TaskService", () => {
       });
     });
 
+    it("records a StatusChanged activity with the actor and from/to", async () => {
+      mockTaskRepo.prototype.findById.mockResolvedValue({
+        id: "t1",
+        creatorId: "owner",
+        assignedToId: "assignee",
+        status: "ToDo",
+      } as any);
+      mockTaskRepo.prototype.update.mockResolvedValue({
+        id: "t1",
+        creatorId: "owner",
+        assignedToId: "assignee",
+        status: "Completed",
+      } as any);
+
+      await service.updateTask("owner", "t1", { status: "Completed" });
+
+      expect(mockTaskRepo.prototype.addActivity).toHaveBeenCalledWith(
+        expect.arrayContaining([
+          {
+            taskId: "t1",
+            actorId: "owner",
+            type: "StatusChanged",
+            detail: { from: "ToDo", to: "Completed" },
+          },
+        ])
+      );
+    });
+
     it("blocks an assignee from editing other fields", async () => {
       mockTaskRepo.prototype.findById.mockResolvedValue({
         id: "t1",

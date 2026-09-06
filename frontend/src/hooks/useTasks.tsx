@@ -60,7 +60,10 @@ export function useTaskRealtime() {
 
   useEffect(() => {
     const socket = getSocket();
-    const invalidate = () => qc.invalidateQueries({ queryKey: ["tasks"] });
+    const invalidate = () => {
+      qc.invalidateQueries({ queryKey: ["tasks"] });
+      qc.invalidateQueries({ queryKey: ["task-activity"] });
+    };
 
     const onCreated = (task: Task) => {
       invalidate();
@@ -119,7 +122,10 @@ export function useUpdateTask() {
       rollback(qc, ctx);
       toast.error(errMsg(e, "Update failed"));
     },
-    onSettled: () => qc.invalidateQueries({ queryKey: ["tasks"] }),
+    onSettled: (_data, _err, vars) => {
+      qc.invalidateQueries({ queryKey: ["tasks"] });
+      qc.invalidateQueries({ queryKey: ["task-activity", vars.id] });
+    },
   });
 }
 

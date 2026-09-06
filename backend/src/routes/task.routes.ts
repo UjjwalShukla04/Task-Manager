@@ -15,6 +15,11 @@ router.use(protect);
 
 router.post("/", validate({ body: CreateTaskSchema }), taskController.createTask);
 router.get("/", validate({ query: TaskFilterSchema }), taskController.getTasks);
+router.get(
+  "/:id/activity",
+  validate({ params: IdParamSchema }),
+  taskController.getTaskActivity
+);
 router.patch(
   "/:id",
   validate({ params: IdParamSchema, body: UpdateTaskSchema }),

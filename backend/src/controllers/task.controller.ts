@@ -71,3 +71,16 @@ export const deleteTask = async (
     next(error);
   }
 };
+
+export const getTaskActivity = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const activity = await taskService.getActivity(req.user!.id, req.params.id);
+    res.status(200).json({ status: "success", data: { activity } });
+  } catch (error) {
+    next(error);
+  }
+};

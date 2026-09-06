@@ -1,5 +1,11 @@
 import api from "./axios";
-import type { Task, Pagination, Priority, TaskStatus } from "../types";
+import type {
+  Task,
+  Pagination,
+  Priority,
+  TaskStatus,
+  TaskActivity,
+} from "../types";
 
 export interface CreateTaskData {
   title: string;
@@ -61,4 +67,11 @@ export const updateTask = async (
 
 export const deleteTask = async (id: string): Promise<void> => {
   await api.delete(`/tasks/${id}`);
+};
+
+export const getTaskActivity = async (id: string): Promise<TaskActivity[]> => {
+  const res = await api.get<{ data: { activity: TaskActivity[] } }>(
+    `/tasks/${id}/activity`
+  );
+  return res.data.data.activity;
 };

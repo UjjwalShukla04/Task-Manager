@@ -33,6 +33,22 @@ export interface Task {
   updatedAt: string;
 }
 
+export type ActivityType =
+  | "Created"
+  | "StatusChanged"
+  | "Reassigned"
+  | "Updated";
+
+export interface TaskActivity {
+  id: string;
+  taskId: string;
+  actorId: string;
+  type: ActivityType;
+  detail: Record<string, unknown> | null;
+  createdAt: string;
+  actor: User;
+}
+
 export interface Pagination {
   total: number;
   page: number;

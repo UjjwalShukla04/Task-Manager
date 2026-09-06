@@ -12,6 +12,7 @@ import { Button } from "./ui/Button";
 import { PriorityPicker } from "./ui/PriorityPicker";
 import { AssigneePicker } from "./ui/AssigneePicker";
 import { DateField } from "./ui/DateField";
+import { TaskActivityLog } from "./TaskActivityLog";
 import { PRIORITIES, type Task } from "../types";
 
 const schema = z.object({
@@ -240,6 +241,12 @@ export function CreateTaskModal({ isOpen, onClose, taskToEdit }: Props) {
           />
         </div>
       </form>
+
+      {isEdit && taskToEdit && (
+        <div className="mt-5">
+          <TaskActivityLog taskId={taskToEdit.id} />
+        </div>
+      )}
     </Modal>
   );
 }

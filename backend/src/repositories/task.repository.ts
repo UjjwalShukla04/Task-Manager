@@ -1,5 +1,5 @@
 import prisma from "../config/prisma";
-import { Prisma } from "@prisma/client";
+import { Prisma, ActivityType } from "@prisma/client";
 import { publicUserSelect } from "./user.repository";
 import {
   CreateTaskInput,
@@ -11,6 +11,13 @@ const taskInclude = {
   assignedTo: { select: publicUserSelect },
   creator: { select: publicUserSelect },
 } satisfies Prisma.TaskInclude;
+
+export interface ActivityEntry {
+  taskId: string;
+  actorId: string;
+  type: ActivityType;
+  detail?: Prisma.InputJsonValue;
+}
 
 export class TaskRepository {
   async create(data: CreateTaskInput & { creatorId: string }) {
@@ -79,5 +86,26 @@ export class TaskRepository {
 
   async delete(id: string) {
     return prisma.task.delete({ where: { id } });
+  }
+
+  async addActivity(entries: ActivityEntry | ActivityEntry[]) {
+    const rows = Array.isArray(entries) ? entries : [entries];
+    if (rows.length === 0) return;
+    await prisma.taskActivity.createMany({
+      data: rows.map((r) => ({
+        taskId: r.taskId,
+        actorId: r.actorId,
+        type: r.type,
+        detail: r.detail,
+      })),
+    });
+  }
+
+  async findActivity(taskId: string) {
+    return prisma.taskActivity.findMany({
+      where: { taskId },
+      orderBy: { createdAt: "desc" },
+      include: { actor: { select: publicUserSelect } },
+    });
   }
 }
