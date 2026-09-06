@@ -8,8 +8,11 @@ import type { TaskStatus } from "../types";
 interface QuickAddProps {
   /** Column status (board view) — new task is moved here after creation. */
   status?: TaskStatus;
-  /** Column due date as ISO (deadline view) — used instead of the +7d default. */
-  dueDateIso?: string;
+  /**
+   * Column due date (deadline view). `undefined` = default (+7d),
+   * a string = that ISO date, `null` = create with no deadline.
+   */
+  dueDateIso?: string | null;
   label?: string;
 }
 
@@ -21,16 +24,17 @@ export function QuickAdd({ status, dueDateIso, label = "Add task" }: QuickAddPro
 
   const mutation = useMutation({
     mutationFn: async (value: string) => {
-      const due =
-        dueDateIso ??
-        (() => {
-          const d = new Date();
-          d.setDate(d.getDate() + 7);
-          return d.toISOString();
-        })();
+      let dueDate: string | null | undefined;
+      if (dueDateIso === undefined) {
+        const d = new Date();
+        d.setDate(d.getDate() + 7);
+        dueDate = d.toISOString();
+      } else {
+        dueDate = dueDateIso; // string or null
+      }
       const task = await createTask({
         title: value,
-        dueDate: due,
+        dueDate,
         priority: "Medium",
       });
       if (status && status !== "ToDo") {

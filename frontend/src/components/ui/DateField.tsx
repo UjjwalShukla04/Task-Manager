@@ -44,6 +44,15 @@ export function DateField({ value, onChange, error, id = "task-due" }: Props) {
               </button>
             );
           })}
+          {value && (
+            <button
+              type="button"
+              onClick={() => onChange("")}
+              className="rounded-md px-1.5 py-0.5 text-[12px] font-medium text-muted transition-colors hover:text-rose-500"
+            >
+              Clear
+            </button>
+          )}
         </div>
       </div>
       <input

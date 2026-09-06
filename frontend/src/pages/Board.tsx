@@ -172,12 +172,11 @@ export default function BoardPage() {
 
   const overdue = useMemo(
     () =>
-      tasks.filter(
-        (t) =>
-          t.status !== "Completed" &&
-          isPast(new Date(t.dueDate)) &&
-          !isToday(new Date(t.dueDate))
-      ).length,
+      tasks.filter((t) => {
+        if (t.status === "Completed" || !t.dueDate) return false;
+        const d = new Date(t.dueDate);
+        return isPast(d) && !isToday(d);
+      }).length,
     [tasks]
   );
 

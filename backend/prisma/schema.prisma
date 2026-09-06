@@ -45,7 +45,7 @@ model Task {
   id           String     @id @default(uuid())
   title        String
   description  String     @default("")
-  dueDate      DateTime
+  dueDate      DateTime?
   priority     Priority
   status       TaskStatus @default(ToDo)
   creatorId    String

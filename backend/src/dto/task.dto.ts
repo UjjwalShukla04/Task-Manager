@@ -3,21 +3,24 @@ import { z } from "zod";
 export const PRIORITIES = ["Low", "Medium", "High", "Urgent"] as const;
 export const STATUSES = ["ToDo", "InProgress", "Review", "Completed"] as const;
 
+/** Parses a string/Date into a Date; used as a nullish field below. */
+const DueDateValue = z
+  .union([z.string(), z.date()])
+  .transform((val, ctx) => {
+    const d = new Date(val);
+    if (Number.isNaN(d.getTime())) {
+      ctx.addIssue({ code: "custom", message: "Invalid due date" });
+      return z.NEVER;
+    }
+    return d;
+  });
+
 export const CreateTaskSchema = z.object({
   title: z.string().trim().min(1, "Title is required").max(120, "Title too long"),
   // Optional; the DB column defaults to "" when omitted.
   description: z.string().trim().max(5000).optional(),
-  dueDate: z
-    .string()
-    .or(z.date())
-    .transform((val, ctx) => {
-      const d = new Date(val);
-      if (Number.isNaN(d.getTime())) {
-        ctx.addIssue({ code: "custom", message: "Invalid due date" });
-        return z.NEVER;
-      }
-      return d;
-    }),
+  // Optional / nullable — a task can have no deadline.
+  dueDate: DueDateValue.nullish(),
   priority: z.enum(PRIORITIES),
   assignedToId: z.string().uuid().optional(),
 });

@@ -10,7 +10,7 @@ import type {
 export interface CreateTaskData {
   title: string;
   description?: string;
-  dueDate: string;
+  dueDate?: string | null;
   priority: Priority;
   assignedToId?: string;
 }
@@ -18,7 +18,7 @@ export interface CreateTaskData {
 export interface UpdateTaskData {
   title?: string;
   description?: string;
-  dueDate?: string;
+  dueDate?: string | null;
   priority?: Priority;
   status?: TaskStatus;
   assignedToId?: string | null;

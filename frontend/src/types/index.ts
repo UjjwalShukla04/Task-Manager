@@ -22,7 +22,7 @@ export interface Task {
   id: string;
   title: string;
   description: string;
-  dueDate: string;
+  dueDate: string | null;
   priority: Priority;
   status: TaskStatus;
   creatorId: string;

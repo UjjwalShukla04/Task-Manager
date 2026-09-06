@@ -18,7 +18,7 @@ import { PRIORITIES, type Task } from "../types";
 const schema = z.object({
   title: z.string().trim().min(1, "Title is required").max(120, "Keep it under 120 characters"),
   description: z.string().trim().max(5000).optional(),
-  dueDate: z.string().min(1, "Pick a due date"),
+  dueDate: z.string().optional(),
   priority: z.enum(PRIORITIES),
   assignedToId: z.string().optional(),
 });
@@ -79,7 +79,9 @@ export function CreateTaskModal({ isOpen, onClose, taskToEdit }: Props) {
         ? {
             title: taskToEdit.title,
             description: taskToEdit.description,
-            dueDate: format(new Date(taskToEdit.dueDate), "yyyy-MM-dd"),
+            dueDate: taskToEdit.dueDate
+              ? format(new Date(taskToEdit.dueDate), "yyyy-MM-dd")
+              : "",
             priority: taskToEdit.priority,
             assignedToId: taskToEdit.assignedToId ?? "",
           }
@@ -92,7 +94,7 @@ export function CreateTaskModal({ isOpen, onClose, taskToEdit }: Props) {
     const payload = {
       title: data.title,
       description: data.description ?? "",
-      dueDate: toDueIso(data.dueDate),
+      dueDate: data.dueDate ? toDueIso(data.dueDate) : null,
       priority: data.priority,
     };
     if (isEdit && taskToEdit) {
@@ -203,7 +205,7 @@ export function CreateTaskModal({ isOpen, onClose, taskToEdit }: Props) {
           name="dueDate"
           render={({ field }) => (
             <DateField
-              value={field.value}
+              value={field.value ?? ""}
               onChange={field.onChange}
               error={errors.dueDate?.message}
             />

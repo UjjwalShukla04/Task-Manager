@@ -14,29 +14,40 @@ export const DEADLINE_BUCKETS = [
   "today",
   "thisWeek",
   "nextWeek",
-  "later",
+  "noDeadline",
+  "overTwoWeeks",
+  "completed",
 ] as const;
 
 export type DeadlineBucket = (typeof DEADLINE_BUCKETS)[number];
 
-export const bucketMeta: Record<
-  DeadlineBucket,
-  { label: string; dot: string; droppable: boolean }
-> = {
-  overdue: { label: "Overdue", dot: "bg-rose-500", droppable: false },
-  today: { label: "Due today", dot: "bg-amber-500", droppable: true },
-  thisWeek: { label: "Due this week", dot: "bg-sky-500", droppable: true },
-  nextWeek: { label: "Due next week", dot: "bg-violet-500", droppable: true },
-  later: { label: "Later", dot: "bg-slate-400", droppable: true },
+interface BucketConfig {
+  label: string;
+  dot: string;
+  /** Can a card be dropped here? */
+  droppable: boolean;
+  /** Show the inline quick-add composer? */
+  quickAdd: boolean;
+}
+
+export const bucketMeta: Record<DeadlineBucket, BucketConfig> = {
+  overdue: { label: "Overdue", dot: "bg-rose-500", droppable: false, quickAdd: false },
+  today: { label: "Due today", dot: "bg-amber-500", droppable: true, quickAdd: true },
+  thisWeek: { label: "Due this week", dot: "bg-sky-500", droppable: true, quickAdd: true },
+  nextWeek: { label: "Due next week", dot: "bg-violet-500", droppable: true, quickAdd: true },
+  noDeadline: { label: "No deadline", dot: "bg-slate-400", droppable: true, quickAdd: true },
+  overTwoWeeks: { label: "Due over two weeks", dot: "bg-teal-500", droppable: true, quickAdd: true },
+  completed: { label: "Completed", dot: "bg-emerald-500", droppable: true, quickAdd: false },
 };
 
 const WEEK = { weekStartsOn: 1 } as const; // Monday
 
 export function deadlineBucket(task: Task): DeadlineBucket {
-  const due = new Date(task.dueDate);
-  const notDone = task.status !== "Completed";
+  if (task.status === "Completed") return "completed";
+  if (!task.dueDate) return "noDeadline";
 
-  if (notDone && isPast(due) && !isToday(due)) return "overdue";
+  const due = new Date(task.dueDate);
+  if (isPast(due) && !isToday(due)) return "overdue";
   if (isToday(due)) return "today";
 
   const endThisWeek = endOfWeek(new Date(), WEEK);
@@ -44,41 +55,54 @@ export function deadlineBucket(task: Task): DeadlineBucket {
 
   if (!isAfter(due, endThisWeek)) return "thisWeek";
   if (!isAfter(due, endNextWeek)) return "nextWeek";
-  return "later";
+  return "overTwoWeeks";
 }
 
-/** Representative due date when a task is dropped into / created in a bucket. */
-export function bucketTargetIso(bucket: DeadlineBucket): string {
+/**
+ * The change to apply when a task is dropped into / created in a bucket.
+ * `null` dueDate clears the deadline; `status` set completes the task.
+ */
+export function bucketChange(
+  bucket: DeadlineBucket
+): { dueDate?: string | null; status?: "Completed" } {
   const now = new Date();
   switch (bucket) {
     case "today":
-      return endOfDay(now).toISOString();
+      return { dueDate: endOfDay(now).toISOString() };
     case "thisWeek":
-      return endOfDay(endOfWeek(now, WEEK)).toISOString();
+      return { dueDate: endOfDay(endOfWeek(now, WEEK)).toISOString() };
     case "nextWeek":
-      return endOfDay(endOfWeek(addWeeks(now, 1), WEEK)).toISOString();
-    case "later":
-      return endOfDay(addDays(now, 21)).toISOString();
+      return { dueDate: endOfDay(endOfWeek(addWeeks(now, 1), WEEK)).toISOString() };
+    case "overTwoWeeks":
+      return { dueDate: endOfDay(addDays(now, 21)).toISOString() };
+    case "noDeadline":
+      return { dueDate: null };
+    case "completed":
+      return { status: "Completed" };
     default:
-      return endOfDay(now).toISOString();
+      return {};
   }
 }
 
-/** Completed tasks are omitted — the deadline view is for scheduling open work. */
+/** Due date to pre-fill for quick-add in a bucket (null = no deadline). */
+export function quickAddDate(bucket: DeadlineBucket): string | null {
+  const c = bucketChange(bucket);
+  return "dueDate" in c ? (c.dueDate ?? null) : null;
+}
+
 export function groupByBucket(tasks: Task[]): Record<DeadlineBucket, Task[]> {
-  const groups = {
-    overdue: [] as Task[],
-    today: [] as Task[],
-    thisWeek: [] as Task[],
-    nextWeek: [] as Task[],
-    later: [] as Task[],
-  };
-  for (const t of tasks) {
-    if (t.status === "Completed") continue;
-    groups[deadlineBucket(t)].push(t);
-  }
-  for (const k of DEADLINE_BUCKETS) {
-    groups[k].sort((a, b) => +new Date(a.dueDate) - +new Date(b.dueDate));
+  const groups = Object.fromEntries(
+    DEADLINE_BUCKETS.map((b) => [b, [] as Task[]])
+  ) as Record<DeadlineBucket, Task[]>;
+
+  for (const t of tasks) groups[deadlineBucket(t)].push(t);
+
+  for (const b of DEADLINE_BUCKETS) {
+    groups[b].sort((a, z) => {
+      const av = a.dueDate ? +new Date(a.dueDate) : Infinity;
+      const zv = z.dueDate ? +new Date(z.dueDate) : Infinity;
+      return av - zv;
+    });
   }
   return groups;
 }

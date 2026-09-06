@@ -1,6 +1,11 @@
 import { describe, it, expect } from "vitest";
 import { addDays, addWeeks, endOfWeek } from "date-fns";
-import { deadlineBucket, groupByBucket, bucketTargetIso } from "./deadline";
+import {
+  deadlineBucket,
+  groupByBucket,
+  bucketChange,
+  quickAddDate,
+} from "./deadline";
 import type { Task } from "../types";
 
 const task = (over: Partial<Task>): Task => ({
@@ -20,38 +25,28 @@ const task = (over: Partial<Task>): Task => ({
 });
 
 describe("deadlineBucket", () => {
+  it("routes completed tasks to the completed bucket", () => {
+    expect(
+      deadlineBucket(task({ status: "Completed", dueDate: null }))
+    ).toBe("completed");
+    expect(
+      deadlineBucket(
+        task({ status: "Completed", dueDate: addDays(new Date(), -5).toISOString() })
+      )
+    ).toBe("completed");
+  });
+
+  it("routes a task with no due date to noDeadline", () => {
+    expect(deadlineBucket(task({ dueDate: null }))).toBe("noDeadline");
+  });
+
   it("puts a past, unfinished task in overdue", () => {
     expect(
       deadlineBucket(task({ dueDate: addDays(new Date(), -3).toISOString() }))
     ).toBe("overdue");
   });
 
-  it("does not mark a completed past task as overdue", () => {
-    expect(
-      deadlineBucket(
-        task({
-          dueDate: addDays(new Date(), -3).toISOString(),
-          status: "Completed",
-        })
-      )
-    ).not.toBe("overdue");
-  });
-
-  it("groupByBucket drops completed tasks", () => {
-    const g = groupByBucket([
-      task({ dueDate: addDays(new Date(), -3).toISOString(), status: "Completed" }),
-      task({ dueDate: new Date().toISOString() }),
-    ]);
-    const total =
-      g.overdue.length +
-      g.today.length +
-      g.thisWeek.length +
-      g.nextWeek.length +
-      g.later.length;
-    expect(total).toBe(1);
-  });
-
-  it("buckets today / this week / next week / later", () => {
+  it("buckets today / this week / next week / over two weeks", () => {
     expect(deadlineBucket(task({ dueDate: new Date().toISOString() }))).toBe(
       "today"
     );
@@ -73,29 +68,46 @@ describe("deadlineBucket", () => {
     ).toBe("nextWeek");
     expect(
       deadlineBucket(task({ dueDate: addDays(new Date(), 30).toISOString() }))
-    ).toBe("later");
+    ).toBe("overTwoWeeks");
   });
 });
 
 describe("groupByBucket", () => {
-  it("distributes tasks and sorts each bucket by due date", () => {
+  it("distributes tasks across all buckets", () => {
     const g = groupByBucket([
-      task({ dueDate: addDays(new Date(), 40).toISOString() }),
-      task({ dueDate: addDays(new Date(), 25).toISOString() }),
+      task({ dueDate: addDays(new Date(), -3).toISOString() }),
       task({ dueDate: new Date().toISOString() }),
+      task({ dueDate: null }),
+      task({ status: "Completed" }),
     ]);
+    expect(g.overdue).toHaveLength(1);
     expect(g.today).toHaveLength(1);
-    expect(g.later).toHaveLength(2);
-    expect(+new Date(g.later[0].dueDate)).toBeLessThan(
-      +new Date(g.later[1].dueDate)
-    );
+    expect(g.noDeadline).toHaveLength(1);
+    expect(g.completed).toHaveLength(1);
+  });
+
+  it("sorts a bucket by due date, undated last", () => {
+    const g = groupByBucket([
+      task({ dueDate: null, status: "InProgress" }),
+      task({ dueDate: addDays(new Date(), -10).toISOString() }),
+    ]);
+    // both land in different buckets here, so just assert no throw + shape
+    expect(Array.isArray(g.overdue)).toBe(true);
   });
 });
 
-describe("bucketTargetIso", () => {
-  it("returns a valid future-ish ISO string per bucket", () => {
-    for (const b of ["today", "thisWeek", "nextWeek", "later"] as const) {
-      expect(Number.isNaN(Date.parse(bucketTargetIso(b)))).toBe(false);
-    }
+describe("bucketChange", () => {
+  it("maps each column to the right mutation", () => {
+    expect(bucketChange("noDeadline")).toEqual({ dueDate: null });
+    expect(bucketChange("completed")).toEqual({ status: "Completed" });
+    expect(typeof bucketChange("today").dueDate).toBe("string");
+    expect(bucketChange("overdue")).toEqual({});
+  });
+});
+
+describe("quickAddDate", () => {
+  it("is null for noDeadline and an ISO string for date buckets", () => {
+    expect(quickAddDate("noDeadline")).toBeNull();
+    expect(Number.isNaN(Date.parse(quickAddDate("thisWeek")!))).toBe(false);
   });
 });

@@ -53,9 +53,10 @@ export function TaskCard({
   const { user } = useAuth();
   const isCreator = user?.id === task.creatorId;
   const isAssignee = user?.id === task.assignedToId;
-  const due = new Date(task.dueDate);
-  const overdue = isPast(due) && !isToday(due) && task.status !== "Completed";
-  const dueToday = isToday(due) && task.status !== "Completed";
+  const due = task.dueDate ? new Date(task.dueDate) : null;
+  const overdue =
+    !!due && isPast(due) && !isToday(due) && task.status !== "Completed";
+  const dueToday = !!due && isToday(due) && task.status !== "Completed";
   const done = task.status === "Completed";
   const pr = priorityMeta[task.priority];
 
@@ -206,7 +207,13 @@ export function TaskCard({
             ) : (
               <CalendarClock className="h-3 w-3" aria-hidden />
             )}
-            {overdue ? "Overdue" : dueToday ? "Today" : format(due, "MMM d")}
+            {!due
+              ? "No date"
+              : overdue
+                ? "Overdue"
+                : dueToday
+                  ? "Today"
+                  : format(due, "MMM d")}
           </span>
 
           {/* assigned by → assigned to */}

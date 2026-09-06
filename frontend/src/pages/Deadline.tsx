@@ -18,7 +18,8 @@ import type { Task } from "../types";
 import {
   DEADLINE_BUCKETS,
   bucketMeta,
-  bucketTargetIso,
+  bucketChange,
+  quickAddDate,
   groupByBucket,
   type DeadlineBucket,
 } from "../lib/deadline";
@@ -85,12 +86,14 @@ function Column({
   return (
     <section
       aria-label={meta.label}
-      className="flex min-w-0 flex-col rounded-2xl bg-fg/2.5 p-2.5 dark:bg-white/2"
+      className="flex w-70 shrink-0 flex-col rounded-2xl bg-fg/2.5 p-2.5 dark:bg-white/2"
     >
       <header className="flex items-center gap-2 px-2 pb-2.5 pt-1">
         <span className={cn("h-2 w-2 rounded-full", meta.dot)} aria-hidden />
-        <h2 className="text-[14px] font-semibold text-fg">{meta.label}</h2>
-        <span className="rounded-full bg-fg/6 px-1.5 text-[12px] font-medium text-muted dark:bg-white/8">
+        <h2 className="truncate text-[14px] font-semibold text-fg">
+          {meta.label}
+        </h2>
+        <span className="ml-auto rounded-full bg-fg/6 px-1.5 text-[12px] font-medium text-muted dark:bg-white/8">
           {tasks.length}
         </span>
       </header>
@@ -106,7 +109,7 @@ function Column({
           <TaskCardSkeleton />
         ) : tasks.length === 0 ? (
           <p className="px-2 py-8 text-center text-xs text-faint">
-            {meta.droppable ? "Drop tasks here" : "Nothing overdue"}
+            {meta.droppable ? "Drop tasks here" : "Nothing here"}
           </p>
         ) : (
           tasks.map((t) => (
@@ -119,8 +122,8 @@ function Column({
             />
           ))
         )}
-        {!loading && meta.droppable && (
-          <QuickAdd dueDateIso={bucketTargetIso(bucket)} label="Quick task" />
+        {!loading && meta.quickAdd && (
+          <QuickAdd dueDateIso={quickAddDate(bucket)} label="Quick task" />
         )}
       </div>
     </section>
@@ -159,10 +162,9 @@ export default function DeadlinePage() {
     const task = tasks.find((t) => t.id === active.id);
     const target = over.id as DeadlineBucket;
     if (!task || !bucketMeta[target]?.droppable) return;
-    updateMutation.mutate({
-      id: task.id,
-      data: { dueDate: bucketTargetIso(target) },
-    });
+    const change = bucketChange(target);
+    if (Object.keys(change).length === 0) return;
+    updateMutation.mutate({ id: task.id, data: change });
   };
 
   return (
@@ -171,7 +173,8 @@ export default function DeadlinePage() {
         <div>
           <h1 className="text-xl font-semibold text-fg">Deadline</h1>
           <p className="mt-0.5 text-[14px] text-muted">
-            Grouped by due date — drag a card to reschedule it.
+            Grouped by due date — drag a card to reschedule, clear its
+            deadline, or complete it.
           </p>
         </div>
         <Button onClick={() => openCreate()}>
@@ -204,18 +207,20 @@ export default function DeadlinePage() {
           onDragEnd={onDragEnd}
           onDragCancel={() => setActiveId(null)}
         >
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-            {DEADLINE_BUCKETS.map((b) => (
-              <Column
-                key={b}
-                bucket={b}
-                tasks={groups[b]}
-                loading={isLoading}
-                onEdit={openEdit}
-                onDelete={setToDelete}
-                onStatusChange={changeStatus}
-              />
-            ))}
+          <div className="-mx-4 overflow-x-auto px-4 pb-3 sm:-mx-6 sm:px-6 [scrollbar-width:thin]">
+            <div className="flex gap-3">
+              {DEADLINE_BUCKETS.map((b) => (
+                <Column
+                  key={b}
+                  bucket={b}
+                  tasks={groups[b]}
+                  loading={isLoading}
+                  onEdit={openEdit}
+                  onDelete={setToDelete}
+                  onStatusChange={changeStatus}
+                />
+              ))}
+            </div>
           </div>
 
           <DragOverlay>
