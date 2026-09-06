@@ -50,7 +50,7 @@ function Chrome() {
       </a>
 
       <header className="sticky top-0 z-30 border-b border-line bg-app/70 backdrop-blur-xl">
-        <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
+        <div className="mx-auto flex h-14 max-w-[1800px] items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-5">
             <Brand size="sm" />
             <nav className="flex items-center gap-1" aria-label="Views">
@@ -135,7 +135,10 @@ function Chrome() {
         </div>
       </header>
 
-      <main id="main" className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
+      <main
+        id="main"
+        className="mx-auto max-w-[1800px] px-4 py-8 sm:px-6 lg:px-8"
+      >
         <Outlet />
       </main>
     </div>

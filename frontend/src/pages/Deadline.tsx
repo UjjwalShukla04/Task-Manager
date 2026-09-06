@@ -86,7 +86,7 @@ function Column({
   return (
     <section
       aria-label={meta.label}
-      className="flex w-70 shrink-0 flex-col rounded-2xl bg-fg/2.5 p-2.5 dark:bg-white/2"
+      className="flex min-w-56 flex-1 flex-col rounded-2xl bg-fg/2.5 p-2.5 dark:bg-white/2"
     >
       <header className="flex items-center gap-2 px-2 pb-2.5 pt-1">
         <span className={cn("h-2 w-2 rounded-full", meta.dot)} aria-hidden />
@@ -207,7 +207,7 @@ export default function DeadlinePage() {
           onDragEnd={onDragEnd}
           onDragCancel={() => setActiveId(null)}
         >
-          <div className="-mx-4 overflow-x-auto px-4 pb-3 sm:-mx-6 sm:px-6 [scrollbar-width:thin]">
+          <div className="-mx-4 overflow-x-auto px-4 pb-3 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 [scrollbar-width:thin]">
             <div className="flex gap-3">
               {DEADLINE_BUCKETS.map((b) => (
                 <Column
