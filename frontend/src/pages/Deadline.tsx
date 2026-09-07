@@ -87,11 +87,16 @@ function Column({
     id: bucket,
     disabled: !meta.droppable,
   });
+  // Empty columns stay compact so more of them fit before scrolling.
+  const empty = !loading && tasks.length === 0;
 
   return (
     <section
       aria-label={meta.label}
-      className="flex min-w-56 flex-1 flex-col rounded-2xl bg-fg/2.5 p-2.5 dark:bg-white/2"
+      className={cn(
+        "flex flex-col rounded-2xl bg-fg/2.5 p-2 transition-[width,flex] dark:bg-white/2",
+        empty ? "w-44 flex-none" : "min-w-52 flex-1"
+      )}
     >
       <header className="flex items-center gap-2 px-2 pb-2.5 pt-1">
         <span className={cn("h-2 w-2 rounded-full", meta.dot)} aria-hidden />
@@ -243,7 +248,7 @@ export default function DeadlinePage() {
               onScroll={syncArrows}
               className="overflow-x-auto px-4 pb-3 sm:px-6 lg:px-8 [scrollbar-width:thin]"
             >
-              <div className="flex gap-3">
+              <div className="flex gap-2.5">
                 {DEADLINE_BUCKETS.map((b) => (
                   <Column
                     key={b}
