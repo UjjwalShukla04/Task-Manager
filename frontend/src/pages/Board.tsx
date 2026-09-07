@@ -198,10 +198,19 @@ export default function BoardPage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-xl font-semibold text-fg">Board</h1>
-          <p className="mt-0.5 text-[14px] text-muted">
-            Drag cards, or press{" "}
-            <kbd className="rounded border border-line px-1 text-[12px]">⌘K</kbd>{" "}
-            for quick actions.
+          <p className="mt-0.5 max-w-3xl text-[14px] leading-relaxed text-muted">
+            Each column is a stage of work — To&nbsp;Do → In&nbsp;Progress →
+            Review → Completed. Drag a card to move that task to the next
+            stage: the change is saved instantly, pushed live to the task's
+            creator and assignee, and recorded in its activity log. The
+            counters above show where your work stands right now.{" "}
+            <span className="whitespace-nowrap">
+              Press{" "}
+              <kbd className="rounded border border-line px-1 text-[12px]">
+                ⌘K
+              </kbd>{" "}
+              for quick actions.
+            </span>
           </p>
         </div>
         <Button onClick={() => openCreate()}>
