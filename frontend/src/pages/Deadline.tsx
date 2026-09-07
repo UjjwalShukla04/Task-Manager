@@ -99,11 +99,11 @@ function Column({
       aria-label={meta.label}
       style={width ? { flex: `0 0 ${width}px`, width } : undefined}
       className={cn(
-        "flex flex-col rounded-2xl bg-fg/2.5 p-2 dark:bg-white/2",
+        "flex h-full min-h-0 flex-col rounded-2xl bg-fg/2.5 p-2 dark:bg-white/2",
         !width && "w-64 shrink-0"
       )}
     >
-      <header className="flex items-center gap-2 px-2 pb-2.5 pt-1">
+      <header className="flex shrink-0 items-center gap-2 px-2 pb-2.5 pt-1">
         <span className={cn("h-2 w-2 rounded-full", meta.dot)} aria-hidden />
         <h2 className="truncate text-[14px] font-semibold text-fg">
           {meta.label}
@@ -116,29 +116,33 @@ function Column({
       <div
         ref={setNodeRef}
         className={cn(
-          "flex flex-1 flex-col gap-2.5 rounded-xl p-1 transition-colors",
+          "flex min-h-0 flex-1 flex-col rounded-xl p-1 transition-colors",
           isOver && "bg-accent/8 ring-2 ring-inset ring-accent/30"
         )}
       >
-        {loading ? (
-          <TaskCardSkeleton />
-        ) : tasks.length === 0 ? (
-          <p className="px-2 py-8 text-center text-xs text-faint">
-            {meta.droppable ? "Drop tasks here" : "Nothing here"}
-          </p>
-        ) : (
-          tasks.map((t) => (
-            <DraggableCard
-              key={t.id}
-              task={t}
-              onEdit={onEdit}
-              onDelete={onDelete}
-              onStatusChange={onStatusChange}
-            />
-          ))
-        )}
+        <div className="flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto [scrollbar-width:thin]">
+          {loading ? (
+            <TaskCardSkeleton />
+          ) : tasks.length === 0 ? (
+            <p className="px-2 py-8 text-center text-xs text-faint">
+              {meta.droppable ? "Drop tasks here" : "Nothing here"}
+            </p>
+          ) : (
+            tasks.map((t) => (
+              <DraggableCard
+                key={t.id}
+                task={t}
+                onEdit={onEdit}
+                onDelete={onDelete}
+                onStatusChange={onStatusChange}
+              />
+            ))
+          )}
+        </div>
         {!loading && meta.quickAdd && (
-          <QuickAdd dueDateIso={quickAddDate(bucket)} label="Quick task" />
+          <div className="shrink-0 pt-2">
+            <QuickAdd dueDateIso={quickAddDate(bucket)} label="Quick task" />
+          </div>
         )}
       </div>
     </section>
@@ -223,8 +227,8 @@ export default function DeadlinePage() {
   };
 
   return (
-    <div className="space-y-5">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+    <div className="flex h-[calc(100dvh-3.5rem-4rem)] flex-col gap-4">
+      <div className="flex shrink-0 flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-xl font-semibold text-fg">Deadline</h1>
           <p className="mt-0.5 text-[14px] text-muted">
@@ -262,13 +266,13 @@ export default function DeadlinePage() {
           onDragEnd={onDragEnd}
           onDragCancel={() => setActiveId(null)}
         >
-          <div className="relative -mx-4 sm:-mx-6 lg:-mx-8">
+          <div className="relative -mx-4 min-h-0 flex-1 sm:-mx-6 lg:-mx-8">
             <div
               ref={scrollRef}
               onScroll={syncArrows}
-              className="overflow-x-auto px-4 pb-3 sm:px-6 lg:px-8 [scrollbar-width:thin]"
+              className="h-full overflow-x-auto px-4 pb-3 sm:px-6 lg:px-8 [scrollbar-width:thin]"
             >
-              <div className="flex w-max gap-2.5">
+              <div className="flex h-full w-max gap-2.5">
                 {DEADLINE_BUCKETS.map((b) => (
                   <Column
                     key={b}
