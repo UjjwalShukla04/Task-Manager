@@ -67,10 +67,15 @@ function DraggableCard({
   );
 }
 
+/** How many columns are visible at once before you scroll. */
+const VISIBLE_COLUMNS = 5;
+const COLUMN_GAP = 10; // matches gap-2.5
+
 function Column({
   bucket,
   tasks,
   loading,
+  width,
   onEdit,
   onDelete,
   onStatusChange,
@@ -78,6 +83,7 @@ function Column({
   bucket: DeadlineBucket;
   tasks: Task[];
   loading: boolean;
+  width?: number;
   onEdit: (t: Task) => void;
   onDelete: (t: Task) => void;
   onStatusChange: (t: Task, s: Task["status"]) => void;
@@ -87,15 +93,14 @@ function Column({
     id: bucket,
     disabled: !meta.droppable,
   });
-  // Empty columns stay compact so more of them fit before scrolling.
-  const empty = !loading && tasks.length === 0;
 
   return (
     <section
       aria-label={meta.label}
+      style={width ? { flex: `0 0 ${width}px`, width } : undefined}
       className={cn(
-        "flex flex-col rounded-2xl bg-fg/2.5 p-2 transition-[width,flex] dark:bg-white/2",
-        empty ? "w-44 flex-none" : "min-w-52 flex-1"
+        "flex flex-col rounded-2xl bg-fg/2.5 p-2 dark:bg-white/2",
+        !width && "w-64 shrink-0"
       )}
     >
       <header className="flex items-center gap-2 px-2 pb-2.5 pt-1">
@@ -153,9 +158,11 @@ export default function DeadlinePage() {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [toDelete, setToDelete] = useState<Task | undefined>();
 
-  // Horizontal scroll controls for the column strip.
+  // Column strip: size each column so exactly VISIBLE_COLUMNS fit; the rest
+  // are reached by scrolling / the arrow buttons.
   const scrollRef = useRef<HTMLDivElement>(null);
   const [scroll, setScroll] = useState({ left: false, right: false });
+  const [colWidth, setColWidth] = useState<number>();
 
   const syncArrows = useCallback(() => {
     const el = scrollRef.current;
@@ -166,16 +173,29 @@ export default function DeadlinePage() {
     });
   }, []);
 
-  useEffect(() => {
+  const recompute = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const cs = getComputedStyle(el);
+    const padX = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
+    const avail = el.clientWidth - padX - COLUMN_GAP * (VISIBLE_COLUMNS - 1);
+    setColWidth(Math.max(200, Math.floor(avail / VISIBLE_COLUMNS)));
     syncArrows();
-    window.addEventListener("resize", syncArrows);
-    return () => window.removeEventListener("resize", syncArrows);
-  }, [syncArrows, data]);
+  }, [syncArrows]);
+
+  useEffect(() => {
+    recompute();
+    window.addEventListener("resize", recompute);
+    return () => window.removeEventListener("resize", recompute);
+  }, [recompute, data]);
 
   const nudge = (dir: -1 | 1) => {
     const el = scrollRef.current;
     if (!el) return;
-    el.scrollBy({ left: dir * el.clientWidth * 0.8, behavior: "smooth" });
+    const step = colWidth
+      ? (colWidth + COLUMN_GAP) * Math.max(1, VISIBLE_COLUMNS - 1)
+      : el.clientWidth * 0.8;
+    el.scrollBy({ left: dir * step, behavior: "smooth" });
   };
 
   const sensors = useSensors(
@@ -248,13 +268,14 @@ export default function DeadlinePage() {
               onScroll={syncArrows}
               className="overflow-x-auto px-4 pb-3 sm:px-6 lg:px-8 [scrollbar-width:thin]"
             >
-              <div className="flex gap-2.5">
+              <div className="flex w-max gap-2.5">
                 {DEADLINE_BUCKETS.map((b) => (
                   <Column
                     key={b}
                     bucket={b}
                     tasks={groups[b]}
                     loading={isLoading}
+                    width={colWidth}
                     onEdit={openEdit}
                     onDelete={setToDelete}
                     onStatusChange={changeStatus}
